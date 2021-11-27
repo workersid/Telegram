@@ -4155,6 +4155,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             AndroidUtilities.requestAdjustResize(getParentActivity(), classGuid);
         }
         updateVisibleRows(0, false);
+
+        getMediaDataController().reloadAvailableReactions();
     }
 
     @Override

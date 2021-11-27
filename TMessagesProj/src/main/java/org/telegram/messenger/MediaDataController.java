@@ -32,7 +32,6 @@ import android.text.Spanned;
 import android.text.SpannedString;
 import android.text.TextUtils;
 import android.text.style.CharacterStyle;
-import android.util.Log;
 import android.util.SparseArray;
 
 import org.telegram.SQLite.SQLiteCursor;
@@ -48,7 +47,6 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.Bulletin;
-import org.telegram.ui.Components.SharedMediaLayout;
 import org.telegram.ui.Components.StickerSetBulletinLayout;
 import org.telegram.ui.Components.StickersArchiveAlert;
 import org.telegram.ui.Components.TextStyleSpan;
@@ -58,7 +56,6 @@ import org.telegram.ui.LaunchActivity;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -157,6 +154,7 @@ public class MediaDataController extends BaseController {
     private LongSparseArray<TLRPC.TL_messages_stickerSet> groupStickerSets = new LongSparseArray<>();
     private ConcurrentHashMap<String, TLRPC.TL_messages_stickerSet> stickerSetsByName = new ConcurrentHashMap<>(100, 1.0f, 1);
     private HashMap<String, TLRPC.TL_messages_stickerSet> diceStickerSetsByEmoji = new HashMap<>();
+    private HashMap<String, TLRPC.TL_availableReaction> availableReactionsHashMap = new HashMap<>();
     private LongSparseArray<String> diceEmojiStickerSetsById = new LongSparseArray<>();
     private HashSet<String> loadingDiceStickerSets = new HashSet<>();
     private LongSparseArray<Runnable> removingStickerSetsUndos = new LongSparseArray<>();
@@ -530,6 +528,10 @@ public class MediaDataController extends BaseController {
 
     public TLRPC.TL_messages_stickerSet getStickerSetByEmojiOrName(String emoji) {
         return diceStickerSetsByEmoji.get(emoji);
+    }
+
+    public TLRPC.TL_availableReaction getAvailableReactionByName(String name) {
+        return availableReactionsHashMap.get(name);
     }
 
     public TLRPC.TL_messages_stickerSet getStickerSetById(long id) {
@@ -2045,6 +2047,124 @@ public class MediaDataController extends BaseController {
             baseFragment.showDialog(alert.create());
         }
     }
+
+    public void reloadAvailableReactions() {
+        //todo тут завязаться на переменную, чтобы каждый раз не лезть в бд
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            TLRPC.TL_messages_availableReactions availableReactions = null;
+            int date = 0;
+            SQLiteCursor cursor = null;
+            try {
+                cursor = getMessagesStorage().getDatabase().queryFinalized("SELECT data, date FROM available_reactions WHERE id = 0");
+                if (cursor.next()) {
+                    NativeByteBuffer data = cursor.byteBufferValue(0);
+                    if (data != null) {
+                        availableReactions = (TLRPC.TL_messages_availableReactions) TLRPC.TL_messages_availableReactions.TLdeserialize(data, data.readInt32(false), false);
+                        data.reuse();
+                    }
+                    date = cursor.intValue(1);
+                }
+            } catch (Throwable e) {
+                FileLog.e(e);
+            } finally {
+                if (cursor != null) {
+                    cursor.dispose();
+                }
+            }
+            processAvailableReactionsFromCache(availableReactions, date);
+        });
+    }
+
+    private void processAvailableReactionsFromCache(TLRPC.TL_messages_availableReactions rpcReactions, int date) {
+        if (rpcReactions == null) {
+            downloadAvailableReactions(0);
+        } else {
+            //грузим в кеш(если в кеше пусто) и оповещаем ui что теперь есть инфа по реакциям
+            putAvailableReactionsToCache(rpcReactions, false);
+            if (Math.abs((System.currentTimeMillis() / 1000) - date) >= 60 * 60) {
+                //модуль для защиты от смены времени на телефоне юзером
+                //проверять обновления не чаще 1 раза в час
+                downloadAvailableReactions(rpcReactions.hash);
+            }
+        }
+    }
+
+    private void downloadAvailableReactions(final int hash) {
+        TLRPC.TL_messages_getAvailableReactions req = new TLRPC.TL_messages_getAvailableReactions();
+        if (hash != 0) {
+            req.hash = hash;
+        }
+        getConnectionsManager().sendRequest(req, (response, error) -> {
+            if (error == null && response != null) {
+                if (response instanceof TLRPC.TL_messages_availableReactionsNotModified) {
+                    //обновлеем только дату в бд
+                    updateDateInAvailableReactionsDb((int) (System.currentTimeMillis() / 1000L));
+                } else if (response instanceof TLRPC.TL_messages_availableReactions) {
+                    TLRPC.TL_messages_availableReactions rpcAvailableReactions = ((TLRPC.TL_messages_availableReactions) response);
+                    putAvailableReactionsToCache(rpcAvailableReactions, true);
+                    putAvailableReactionsToDb(rpcAvailableReactions, (int) (System.currentTimeMillis() / 1000L));
+                }
+            }
+            //todo какой тут флаг?
+        }, ConnectionsManager.RequestFlagInvokeAfter);
+    }
+
+    private void putAvailableReactionsToCache(TLRPC.TL_messages_availableReactions rpcReactions, boolean force) {
+        if (rpcReactions == null) return;
+        final ArrayList<TLRPC.TL_availableReaction> reactions = rpcReactions.reactions;
+
+        if (reactions == null || reactions.isEmpty()) return;
+        if (!force && !availableReactionsHashMap.isEmpty()) return;
+
+        Utilities.stageQueue.postRunnable(() -> {
+            final HashMap<String, TLRPC.TL_availableReaction> localAvailableReactionsMap = new HashMap<>();
+            for (int i = 0; i < reactions.size(); i++) {
+                TLRPC.TL_availableReaction reaction = reactions.get(i);
+                localAvailableReactionsMap.put(reaction.reaction, reaction);
+            }
+            AndroidUtilities.runOnUIThread(() -> {
+                availableReactionsHashMap.clear();
+                availableReactionsHashMap.putAll(localAvailableReactionsMap);
+                getNotificationCenter().postNotificationName(NotificationCenter.availableReactionsDidLoad);
+            });
+        });
+    }
+
+    private void putAvailableReactionsToDb(final TLRPC.TL_messages_availableReactions rpcReactions, final int date) {
+        if (rpcReactions == null) return;
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            try {
+                SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO stickers_dice VALUES(?, ?, ?)");
+                state.requery();
+                NativeByteBuffer data = new NativeByteBuffer(rpcReactions.getObjectSize());
+                rpcReactions.serializeToStream(data);
+                state.bindInteger(1, 0);
+                state.bindByteBuffer(2, data);
+                state.bindInteger(3, date);
+                state.step();
+                data.reuse();
+                state.dispose();
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    private void updateDateInAvailableReactionsDb(final int date) {
+        if (date == 0) return;
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            try {
+                SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("UPDATE available_reactions SET date = ?");
+                state.requery();
+                state.bindInteger(1, date);
+                state.step();
+                state.dispose();
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
     //---------------- STICKERS END ----------------
 
     private int reqId;

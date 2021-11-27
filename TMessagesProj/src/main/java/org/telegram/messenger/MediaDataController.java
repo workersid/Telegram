@@ -534,6 +534,10 @@ public class MediaDataController extends BaseController {
         return availableReactionsHashMap.get(name);
     }
 
+    public List<TLRPC.TL_availableReaction> getAvailableReactions() {
+        return new ArrayList<>(availableReactionsHashMap.values());
+    }
+
     public int getAvailableReactionsCount() {
         return availableReactionsHashMap.size();
     }
@@ -2056,7 +2060,7 @@ public class MediaDataController extends BaseController {
         }
     }
 
-    public void reloadAvailableReactions() {
+    public void reloadAvailableReactions(final boolean force) {
         //todo тут завязаться на переменную, чтобы каждый раз не лезть в бд
         getMessagesStorage().getStorageQueue().postRunnable(() -> {
             TLRPC.TL_messages_availableReactions availableReactions = null;
@@ -2079,17 +2083,17 @@ public class MediaDataController extends BaseController {
                     cursor.dispose();
                 }
             }
-            processAvailableReactionsFromCache(availableReactions, date);
+            processAvailableReactionsFromCache(availableReactions, date, force);
         });
     }
 
-    private void processAvailableReactionsFromCache(TLRPC.TL_messages_availableReactions rpcReactions, int date) {
+    private void processAvailableReactionsFromCache(final TLRPC.TL_messages_availableReactions rpcReactions, final int date, final boolean force) {
         if (rpcReactions == null) {
             downloadAvailableReactions(0);
         } else {
             //грузим в кеш(если в кеше пусто) и оповещаем ui что теперь есть инфа по реакциям
             putAvailableReactionsToCache(rpcReactions, false);
-            if (Math.abs((System.currentTimeMillis() / 1000) - date) >= 60 * 60) {
+            if (Math.abs((System.currentTimeMillis() / 1000) - date) >= 60 * 60 || force) {
                 //модуль для защиты от смены времени на телефоне юзером
                 //проверять обновления не чаще 1 раза в час
                 downloadAvailableReactions(rpcReactions.hash);

@@ -4156,7 +4156,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
         updateVisibleRows(0, false);
 
-        getMediaDataController().reloadAvailableReactions();
+        getMediaDataController().reloadAvailableReactions(false);
     }
 
     @Override

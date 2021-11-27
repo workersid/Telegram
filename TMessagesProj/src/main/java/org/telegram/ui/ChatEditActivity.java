@@ -215,7 +215,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
         signMessages = currentChat.signatures;
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.chatInfoDidLoad);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.updateInterfaces);
-
+        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.availableReactionsDidLoad);
         if (info != null) {
             loadLinksCount();
         }
@@ -245,6 +245,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
         }
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.chatInfoDidLoad);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.updateInterfaces);
+        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.availableReactionsDidLoad);
         if (nameTextView != null) {
             nameTextView.onDestroy();
         }
@@ -814,9 +815,10 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
         reactionsCell = new TextCell(context);
         reactionsCell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
         reactionsCell.setOnClickListener(v -> {
-           /* ManageLinksActivity fragment = new ManageLinksActivity(chatId, 0, 0);
-            fragment.setInfo(info, info.exported_invite);
-            presentFragment(fragment);*/
+            if (info != null && info.available_reactions.size() > getMediaDataController().getAvailableReactionsCount()) {
+                getMediaDataController().reloadAvailableReactions(true);
+            }
+            presentFragment(AdminReactionsActivity.create(chatId));
         });
 
         adminCell = new TextCell(context);
@@ -1026,6 +1028,8 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             if ((mask & MessagesController.UPDATE_MASK_AVATAR) != 0) {
                 setAvatar();
             }
+        } else if (id == NotificationCenter.availableReactionsDidLoad) {
+            updateFields(false);
         }
     }
 
@@ -1461,7 +1465,8 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                     inviteLinksCell.setTextAndValueAndIcon(LocaleController.getString("InviteLinks", R.string.InviteLinks), "1", R.drawable.actions_link, true);
                 }
             }
-            if (info == null) {
+
+            if (info == null || !ChatObject.canChangeChatInfo(currentChat)) {
                 reactionsCell.setVisibility(View.GONE);
             } else {
                 reactionsCell.setVisibility(View.VISIBLE);

@@ -534,6 +534,14 @@ public class MediaDataController extends BaseController {
         return availableReactionsHashMap.get(name);
     }
 
+    public int getAvailableReactionsCount() {
+        return availableReactionsHashMap.size();
+    }
+
+    public boolean hasAvailableReactions() {
+        return !availableReactionsHashMap.isEmpty();
+    }
+
     public TLRPC.TL_messages_stickerSet getStickerSetById(long id) {
         return stickerSetsById.get(id);
     }

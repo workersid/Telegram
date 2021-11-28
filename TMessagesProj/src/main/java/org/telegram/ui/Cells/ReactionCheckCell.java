@@ -49,7 +49,7 @@ public class ReactionCheckCell extends FrameLayout {
         imageView = new BackupImageView(context);
         imageView.setAspectFit(true);
         imageView.setLayerNum(1);
-        addView(imageView, LayoutHelper.createFrame(28, 28, Gravity.CENTER_VERTICAL, 16, 0, 0, 0));
+        addView(imageView, LayoutHelper.createFrame(28, 28, Gravity.CENTER_VERTICAL, 18, 0, 0, 0));
 
         textView = new TextView(context);
         textView.setTextColor(Theme.getColor(dialog ? Theme.key_dialogTextBlack : Theme.key_windowBackgroundWhiteBlackText));
@@ -148,7 +148,7 @@ public class ReactionCheckCell extends FrameLayout {
     @Override
     protected void onDraw(Canvas canvas) {
         if (needDivider) {
-            canvas.drawLine(LocaleController.isRTL ? 0 : AndroidUtilities.dp(64), getMeasuredHeight() - 1, getMeasuredWidth() - (LocaleController.isRTL ? AndroidUtilities.dp(64) : 0), getMeasuredHeight() - 1, Theme.dividerPaint);
+            canvas.drawLine(LocaleController.isRTL ? 0 : AndroidUtilities.dp(66), getMeasuredHeight() - 1, getMeasuredWidth() - (LocaleController.isRTL ? AndroidUtilities.dp(66) : 0), getMeasuredHeight() - 1, Theme.dividerPaint);
         }
     }
 

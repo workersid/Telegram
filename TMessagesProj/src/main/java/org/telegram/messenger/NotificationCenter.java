@@ -75,6 +75,7 @@ public class NotificationCenter {
     public static final int stickersDidLoad = totalEvents++;
     public static final int diceStickersDidLoad = totalEvents++;
     public static final int availableReactionsDidLoad = totalEvents++;
+    public static final int availableReactionsInChatChanged = totalEvents++;
     public static final int featuredStickersDidLoad = totalEvents++;
     public static final int groupStickersDidLoad = totalEvents++;
     public static final int messagesReadContent = totalEvents++;

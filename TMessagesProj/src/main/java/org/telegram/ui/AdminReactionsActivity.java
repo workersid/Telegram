@@ -16,6 +16,7 @@ import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -28,6 +29,7 @@ import org.telegram.ui.Cells.ReactionCheckCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
+import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.EmptyTextProgressView;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
@@ -69,21 +71,83 @@ public class AdminReactionsActivity extends BaseFragment implements Notification
     public boolean onFragmentCreate() {
         super.onFragmentCreate();
         final TLRPC.ChatFull chatFull = getMessagesController().getChatFull(id);
-        isEnabledReactions = chatFull != null && chatFull.available_reactions != null;
+        isEnabledReactions = chatFull != null && !chatFull.available_reactions.isEmpty();
         if (isEnabledReactions) {
             selectedReactions.clear();
             selectedReactions.addAll(chatFull.available_reactions);
         }
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.availableReactionsDidLoad);
-        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.chatInfoDidLoad);
         return true;
     }
 
     @Override
     public void onFragmentDestroy() {
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.availableReactionsDidLoad);
-        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.chatInfoDidLoad);
         super.onFragmentDestroy();
+    }
+
+    @Override
+    public boolean onBackPressed() {
+        checkChanges();
+        return super.onBackPressed();
+    }
+
+    private void sendReactions() {
+        final long chatId = id;
+        TLRPC.TL_messages_setChatAvailableReactions req = new TLRPC.TL_messages_setChatAvailableReactions();
+        req.peer = getMessagesController().getInputPeer(-chatId);
+        req.available_reactions = new ArrayList<>(isEnabledReactions ? selectedReactions : new ArrayList<>());
+
+        AndroidUtilities.runOnUIThread(() -> {
+            final TLRPC.ChatFull chatFull = getMessagesController().getChatFull(chatId);
+            chatFull.available_reactions = new ArrayList<>(isEnabledReactions ? selectedReactions : new ArrayList<>());
+            //todo новое поле в базе
+            getMessagesStorage().updateChatInfo(chatFull, false);
+            getNotificationCenter().postNotificationName(NotificationCenter.availableReactionsInChatChanged);
+        });
+
+        getConnectionsManager().sendRequest(req, (response, error) -> {
+            if (error == null) {
+                getMessagesController().processUpdates((TLRPC.Updates) response, false);
+            } else {
+                if (error.text != null && error.text.contains("CHAT_ADMIN_REQUIRED")) {
+                    AlertsCreator.showSimpleToast(null, "You do not have permission to edit reactions.");
+                }
+            }
+            AndroidUtilities.runOnUIThread(() -> getMessagesController().loadFullChat(chatId, 0, true), 1000);
+        }, ConnectionsManager.RequestFlagInvokeAfter);
+    }
+
+    private void checkChanges() {
+        final TLRPC.ChatFull chatFull = getMessagesController().getChatFull(AdminReactionsActivity.this.id);
+
+        if (chatFull != null) {
+            boolean haveChanges = false;
+            final ArrayList<String> chatAvailableReactions = chatFull.available_reactions;
+            if (chatAvailableReactions.isEmpty() && isEnabledReactions) {
+                haveChanges = true;
+            }
+            if (!chatAvailableReactions.isEmpty() && !isEnabledReactions) {
+                haveChanges = true;
+            }
+            if (!chatAvailableReactions.isEmpty() && isEnabledReactions) {
+                for (String reaction : chatAvailableReactions) {
+                    if (!selectedReactions.contains(reaction)) {
+                        haveChanges = true;
+                        break;
+                    }
+                }
+                for (String reaction : selectedReactions) {
+                    if (!chatAvailableReactions.contains(reaction)) {
+                        haveChanges = true;
+                        break;
+                    }
+                }
+            }
+            if (haveChanges) {
+                sendReactions();
+            }
+        }
     }
 
     @Override
@@ -95,7 +159,7 @@ public class AdminReactionsActivity extends BaseFragment implements Notification
             @Override
             public void onItemClick(int id) {
                 if (id == -1) {
-                    //todo сравнить значения, до и после и отправить запрос на сервер
+                    checkChanges();
                     finishFragment();
                 }
             }
@@ -139,7 +203,11 @@ public class AdminReactionsActivity extends BaseFragment implements Notification
                 ReactionCheckCell cell = (ReactionCheckCell) view;
                 boolean checked = cell.isChecked();
                 String reaction = reactions.get(position - 3).reaction;
-                selectedReactions.remove(reaction);
+                if (checked) {
+                    selectedReactions.remove(reaction);
+                } else {
+                    selectedReactions.add(reaction);
+                }
                 cell.setChecked(!checked);
             }
         });
@@ -164,7 +232,7 @@ public class AdminReactionsActivity extends BaseFragment implements Notification
 
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
-        if (id == NotificationCenter.availableReactionsDidLoad || id == NotificationCenter.chatInfoDidLoad) {
+        if (id == NotificationCenter.availableReactionsDidLoad) {
             updateViews();
         }
     }

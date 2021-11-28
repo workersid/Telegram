@@ -216,6 +216,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.chatInfoDidLoad);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.updateInterfaces);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.availableReactionsDidLoad);
+        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.availableReactionsInChatChanged);
         if (info != null) {
             loadLinksCount();
         }
@@ -246,6 +247,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.chatInfoDidLoad);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.updateInterfaces);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.availableReactionsDidLoad);
+        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.availableReactionsInChatChanged);
         if (nameTextView != null) {
             nameTextView.onDestroy();
         }
@@ -1030,6 +1032,12 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             }
         } else if (id == NotificationCenter.availableReactionsDidLoad) {
             updateFields(false);
+        } else if (id == NotificationCenter.availableReactionsInChatChanged) {
+            TLRPC.ChatFull chatFull = getMessagesController().getChatFull(chatId);
+            if (chatFull != null) {
+                info = chatFull;
+                updateFields(false);
+            }
         }
     }
 
@@ -1470,7 +1478,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                 reactionsCell.setVisibility(View.GONE);
             } else {
                 reactionsCell.setVisibility(View.VISIBLE);
-                if (info.available_reactions == null) {
+                if (info.available_reactions.isEmpty()) {
                     reactionsCell.setTextAndValueAndIcon("Reactions", "Off", R.drawable.actions_reactions, true);
                 } else {
                     StringBuilder value = new StringBuilder();

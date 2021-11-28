@@ -101,7 +101,7 @@ public class AdminReactionsActivity extends BaseFragment implements Notification
         AndroidUtilities.runOnUIThread(() -> {
             final TLRPC.ChatFull chatFull = getMessagesController().getChatFull(chatId);
             chatFull.available_reactions = new ArrayList<>(isEnabledReactions ? selectedReactions : new ArrayList<>());
-            //todo новое поле в базе
+            //todo новое поле в базе?
             getMessagesStorage().updateChatInfo(chatFull, false);
             getNotificationCenter().postNotificationName(NotificationCenter.availableReactionsInChatChanged);
         });
@@ -110,9 +110,17 @@ public class AdminReactionsActivity extends BaseFragment implements Notification
             if (error == null) {
                 getMessagesController().processUpdates((TLRPC.Updates) response, false);
             } else {
-                if (error.text != null && error.text.contains("CHAT_ADMIN_REQUIRED")) {
-                    AlertsCreator.showSimpleToast(null, "You do not have permission to edit reactions.");
-                }
+                AndroidUtilities.runOnUIThread(() -> {
+                    if (error.text != null) {
+                        if (error.text.contains("CHAT_ADMIN_REQUIRED")) {
+                            AlertsCreator.showSimpleToast(null, "You do not have permission to edit reactions.");
+                        }
+                        if (error.text.contains("REACTION_INVALID")) {
+                            AlertsCreator.showSimpleToast(null, "Reactions are deprecated.");
+                            getMediaDataController().reloadAvailableReactions(true);
+                        }
+                    }
+                });
             }
             AndroidUtilities.runOnUIThread(() -> getMessagesController().loadFullChat(chatId, 0, true), 1000);
         }, ConnectionsManager.RequestFlagInvokeAfter);
@@ -233,6 +241,25 @@ public class AdminReactionsActivity extends BaseFragment implements Notification
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.availableReactionsDidLoad) {
+            //удаляем все имеющиеся устаревшие реакции из списка ранее выбранных
+            List<TLRPC.TL_availableReaction> rpcReactions = getMediaDataController().getAvailableReactions();
+            List<String> allReactions = new ArrayList<>();
+
+            for (TLRPC.TL_availableReaction rpcReaction : rpcReactions) {
+                allReactions.add(rpcReaction.reaction);
+            }
+
+            List<String> removedReactions = new ArrayList<>();
+            for (String selectedReaction : selectedReactions) {
+                if (!allReactions.contains(selectedReaction)) {
+                    removedReactions.add(selectedReaction);
+                }
+            }
+
+            for (String removedReaction : removedReactions) {
+                selectedReactions.remove(removedReaction);
+            }
+
             updateViews();
         }
     }

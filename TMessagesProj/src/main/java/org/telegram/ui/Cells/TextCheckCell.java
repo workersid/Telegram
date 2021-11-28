@@ -215,6 +215,40 @@ public class TextCheckCell extends FrameLayout {
         super.setBackgroundColor(color);
     }
 
+    public void setBackgroundColorAnimated(boolean checked, final int fromColor, final int toColor, final boolean reversed) {
+        if (animator != null) {
+            animator.cancel();
+            animator = null;
+        }
+        setBackgroundColor(fromColor);
+        if (animationPaint == null) {
+            animationPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        }
+        if (reversed) {
+            checkBox.setOverrideColor(checked ? 2 : 1);
+        } else {
+            checkBox.setOverrideColor(checked ? 1 : 2);
+        }
+        animatedColorBackground = toColor;
+        animationPaint.setColor(toColor);
+        animationProgress = 0.0f;
+        animator = reversed ? ObjectAnimator.ofFloat(this, ANIMATION_PROGRESS, 1.0f, 0.0f) : ObjectAnimator.ofFloat(this, ANIMATION_PROGRESS, 0.0f, 1.0f);
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                if (reversed) {
+                    setBackgroundColor(fromColor);
+                } else {
+                    setBackgroundColor(toColor);
+                }
+                animatedColorBackground = 0;
+                invalidate();
+            }
+        });
+        animator.setInterpolator(CubicBezierInterpolator.EASE_OUT);
+        animator.setDuration(240).start();
+    }
+
     public void setBackgroundColorAnimated(boolean checked, int color) {
         if (animator != null) {
             animator.cancel();

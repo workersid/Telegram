@@ -124,7 +124,11 @@ public class AdminReactionsActivity extends BaseFragment implements Notification
                 boolean checked = cell.isChecked();
                 isEnabledReactions = !checked;
                 view.setTag(isEnabledReactions ? Theme.key_windowBackgroundChecked : Theme.key_windowBackgroundUnchecked);
-                cell.setBackgroundColorAnimated(isEnabledReactions, Theme.getColor(isEnabledReactions ? Theme.key_windowBackgroundChecked : Theme.key_windowBackgroundUnchecked));
+                if (isEnabledReactions) {
+                    cell.setBackgroundColorAnimated(true, Theme.getColor(Theme.key_windowBackgroundUnchecked), Theme.getColor(Theme.key_windowBackgroundChecked), false);
+                } else {
+                    cell.setBackgroundColorAnimated(false, Theme.getColor(Theme.key_windowBackgroundUnchecked), Theme.getColor(Theme.key_windowBackgroundChecked), true);
+                }
                 cell.setChecked(isEnabledReactions);
                 if (isEnabledReactions) {
                     listViewAdapter.notifyItemRangeInserted(1, reactions.size() + 2);

@@ -235,7 +235,7 @@ import org.telegram.ui.Components.URLSpanReplacement;
 import org.telegram.ui.Components.URLSpanUserMention;
 import org.telegram.ui.Components.UndoView;
 import org.telegram.ui.Components.ViewHelper;
-import org.telegram.ui.Components.reaction.ChooseReactionFactory;
+import org.telegram.ui.Components.reaction.ReactionsFactory;
 import org.telegram.ui.Components.reaction.ChooseReactionLayout;
 import org.telegram.ui.Components.reaction.FullScreenReactionDialog;
 import org.telegram.ui.Components.voip.VoIPHelper;
@@ -19940,7 +19940,16 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             shadowDrawable.getPadding(backgroundPaddings);
             popupLayout.setBackgroundColor(getThemedColor(Theme.key_actionBarDefaultSubmenuBackground));
 
-            scrimPopupWindowItems = new ActionBarMenuSubItem[items.size() + (selectedObject.isSponsored() ? 1 : 0)];
+
+            boolean showMessageSeen = currentChat != null && message.isOutOwner() && message.isSent() && !message.isEditing() && !message.isSending() && !message.isSendError() && !message.isContentUnread() && !message.isUnread() && (ConnectionsManager.getInstance(currentAccount).getCurrentTime() - message.messageOwner.date < 7 * 86400)  && (ChatObject.isMegagroup(currentChat) || !ChatObject.isChannel(currentChat)) && chatInfo != null && chatInfo.participants_count < 50 && !(message.messageOwner.action instanceof TLRPC.TL_messageActionChatJoinedByRequest);
+
+            int addedReactions = 0;
+            if (selectedObject.hasReactions() && !showMessageSeen) {
+                addedReactions = 1;
+                ReactionsFactory.createReactionsCounterView(popupLayout, selectedObject, false);
+            }
+
+            scrimPopupWindowItems = new ActionBarMenuSubItem[items.size() + (selectedObject.isSponsored() ? 1 : 0) + addedReactions];
             for (int a = 0, N = items.size(); a < N; a++) {
                 if (a == 0 && selectedObject.isSponsored()) {
                     ActionBarMenuSubItem cell = new ActionBarMenuSubItem(getParentActivity(), true, true, themeDelegate);
@@ -20047,7 +20056,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             });
             scrimPopupContainerLayout.setOrientation(LinearLayout.VERTICAL);
 
-            boolean showMessageSeen = currentChat != null && message.isOutOwner() && message.isSent() && !message.isEditing() && !message.isSending() && !message.isSendError() && !message.isContentUnread() && !message.isUnread() && (ConnectionsManager.getInstance(currentAccount).getCurrentTime() - message.messageOwner.date < 7 * 86400)  && (ChatObject.isMegagroup(currentChat) || !ChatObject.isChannel(currentChat)) && chatInfo != null && chatInfo.participants_count < 50 && !(message.messageOwner.action instanceof TLRPC.TL_messageActionChatJoinedByRequest);
             MessageSeenView messageSeenView = null;
             FrameLayout messageSeenLayout = null;
             if (showMessageSeen) {
@@ -20055,7 +20063,14 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 Drawable shadowDrawable2 = ContextCompat.getDrawable(contentView.getContext(), R.drawable.popup_fixed_alert).mutate();
                 shadowDrawable2.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground), PorterDuff.Mode.MULTIPLY));
                 messageSeenLayout = new FrameLayout(contentView.getContext());
-                messageSeenLayout.addView(messageSeenView);
+
+                if (selectedObject.hasReactions()) {
+                    ReactionsFactory.createReactionsCounterView(messageSeenLayout, selectedObject, true);
+                    messageSeenLayout.addView(messageSeenView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 44, 0, 0, 56, 0, 0));
+                } else {
+                    messageSeenLayout.addView(messageSeenView);
+                }
+
                 messageSeenLayout.setBackground(shadowDrawable2);
                 MessageSeenView finalMessageSeenView = messageSeenView;
                 messageSeenView.setOnClickListener(new View.OnClickListener() {
@@ -20220,20 +20235,17 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 });
             }
 
-            ChooseReactionLayout chooseReactionLayout = ChooseReactionFactory.createView(scrimPopupContainerLayout);
+            ChooseReactionLayout chooseReactionLayout = ReactionsFactory.createChooseReactionLayout(scrimPopupContainerLayout);
             chooseReactionLayout.setDelegate(reaction -> {
-                if (selectedObjectGroup != null && !selectedObjectGroup.messages.isEmpty()) {
-                    getSendMessagesHelper().sendReactionNew(selectedObjectGroup.messages.get(0), reaction.reaction);
-                } else {
-                    getSendMessagesHelper().sendReactionNew(selectedObject, reaction.reaction);
-                }
+                getSendMessagesHelper().sendReactionNew(selectedObject, reaction.reaction);
                 scrimPopupWindow.dismiss();
                 showDialog(new FullScreenReactionDialog(contentView.getContext(), reaction));
             });
             if (messageSeenLayout != null) {
-                scrimPopupContainerLayout.addView(messageSeenLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 60));
+                scrimPopupContainerLayout.addView(messageSeenLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 60 + (selectedObject.hasReactions() ? 56 : 0)));
             }
             scrimPopupContainerLayout.addView(popupLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, showMessageSeen ? -8 : 0, 0, 0));
+
             scrimPopupWindow = new ActionBarPopupWindow(scrimPopupContainerLayout, LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT) {
                 @Override
                 public void dismiss() {

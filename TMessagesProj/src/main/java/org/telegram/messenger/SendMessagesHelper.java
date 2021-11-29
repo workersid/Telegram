@@ -2695,6 +2695,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             if (response != null) {
                 getMessagesController().processUpdates((TLRPC.Updates) response, false);
             }
+            //todo Обработка ошибок
         });
     }
 

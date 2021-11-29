@@ -1,5 +1,8 @@
 package org.telegram.ui.Components.reaction;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.animation.AccelerateInterpolator;
@@ -13,6 +16,7 @@ import org.telegram.messenger.SvgHelper;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.BackupImageView;
+import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 
 import java.util.Random;
@@ -60,18 +64,50 @@ public class FullScreenReactionStickerCell extends FrameLayout {
             if (!isEffect) {
                 imageView.getImageReceiver().setDelegate((imageReceiver, set, thumb1, memCache) -> {
                     imageReceiver.getLottieAnimation().setOnFinishCallback(() -> {
-                        //todo анимируем переход и потом закрываем
-                        if (finishCallback != null) finishCallback.run();
+                        final int bigSize = Math.min(AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y) / 2;
+                        final int smallSize = AndroidUtilities.dp(48);
+                        ValueAnimator anim = ValueAnimator.ofInt(bigSize, smallSize);
+                        anim.addUpdateListener(animation -> {
+                            int val = (int) animation.getAnimatedValue();
+                            imageView.setSize(val, val);
+                            imageView.invalidate();
+                        });
+                        anim.addListener(new AnimatorListenerAdapter() {
+                            @Override
+                            public void onAnimationEnd(Animator animation) {
+                                super.onAnimationEnd(animation);
+                                if (finishCallback != null) finishCallback.run();
+                            }
+                        });
+                        anim.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
+                        anim.setDuration(500);
+                        anim.start();
                     }, imageReceiver.getLottieAnimation().getFramesCount() - 5);//нельзя расчитывать именно на последний кадр, он может не отрендарится из-за троттлинга
                 });
             }
         }
     }
 
-    public void runLottie() {
+    public void runLottie(final boolean move) {
         imageView.getImageReceiver().setAutoRepeat(2);//или 0?
         imageView.getImageReceiver().setAllowStartAnimation(true);
         imageView.getImageReceiver().startAnimation();
+
+        final int bigSize = Math.min(AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y) / 2;
+        final int smallSize = AndroidUtilities.dp(48);
+
+        if (move) {
+            ValueAnimator anim = ValueAnimator.ofInt(smallSize, bigSize);
+            anim.addUpdateListener(animation -> {
+                int val = (int) animation.getAnimatedValue();
+                imageView.setSize(val, val);
+                imageView.invalidate();
+            });
+
+            anim.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
+            anim.setDuration(500);
+            anim.start();
+        }
     }
 
     public void stopLottie() {

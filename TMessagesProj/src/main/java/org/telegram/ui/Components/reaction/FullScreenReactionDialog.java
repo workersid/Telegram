@@ -65,8 +65,8 @@ public class FullScreenReactionDialog extends Dialog {
     @Override
     public void show() {
         super.show();
-        stickerView.runLottie();
-        effectView.runLottie();
+        stickerView.runLottie(true);
+        effectView.runLottie(false);
     }
 
     @Override

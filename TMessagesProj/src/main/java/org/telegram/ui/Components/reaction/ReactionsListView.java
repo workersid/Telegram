@@ -204,10 +204,10 @@ public class ReactionsListView extends LinearLayout {
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    private void finishLoading() {
-        if (listAdapter != null) listAdapter.notifyDataSetChanged();
+    private void finishLoading(boolean withError) {
+        if (listAdapter != null && !withError) listAdapter.notifyDataSetChanged();
 
-        if (hasEmptyElements()) {
+        if (!withError && hasEmptyElements()) {
             isLoading = false;
             loadNext();
         } else {
@@ -263,8 +263,10 @@ public class ReactionsListView extends LinearLayout {
                         } else {
                             loadNextReactionsId = messageReactionsList.next_offset;
                         }
+                        finishLoading(false);
+                    } else {
+                        finishLoading(true);
                     }
-                    finishLoading();
                 }));
                 return;
             }
@@ -287,7 +289,7 @@ public class ReactionsListView extends LinearLayout {
                         if (seenIds.isEmpty()) {
                             loadNextSeenId = END_FLAG;
                             totalSeen = this.allUsers.size() - totalReactions;
-                            finishLoading();
+                            finishLoading(false);
                             return;
                         }
 
@@ -314,8 +316,10 @@ public class ReactionsListView extends LinearLayout {
                                     this.allUsers.addAll(tmpUsers);
                                     loadNextSeenId = END_FLAG;
                                     totalSeen = this.allUsers.size() - totalReactions;
+                                    finishLoading(false);
+                                } else {
+                                    finishLoading(true);
                                 }
-                                finishLoading();
                             }));
                         } else {
                             TLRPC.TL_messages_getFullChat usersReq = new TLRPC.TL_messages_getFullChat();
@@ -335,12 +339,14 @@ public class ReactionsListView extends LinearLayout {
                                     this.allUsers.addAll(tmpUsers);
                                     loadNextSeenId = END_FLAG;
                                     totalSeen = this.allUsers.size() - totalReactions;
+                                    finishLoading(false);
+                                } else {
+                                    finishLoading(true);
                                 }
-                                finishLoading();
                             }));
                         }
                     } else {
-                        finishLoading();
+                        finishLoading(true);
                     }
                 }));
             }

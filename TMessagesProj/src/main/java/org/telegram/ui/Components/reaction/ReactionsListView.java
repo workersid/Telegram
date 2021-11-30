@@ -223,7 +223,7 @@ public class ReactionsListView extends LinearLayout {
                 TLRPC.TL_messages_getMessageReactionsList req = new TLRPC.TL_messages_getMessageReactionsList();
                 req.limit = 100;
                 req.id = messageId;
-                req.peer = MessagesController.getInstance(currentAccount).getInputPeer(chatId);
+                req.peer = MessagesController.getInstance(currentAccount).getInputPeer(dialogId/*chatId*/);
 
                 if (loadNextReactionsId != null) {
                     req.flags |= 2;
@@ -260,14 +260,16 @@ public class ReactionsListView extends LinearLayout {
                             //конец списка юзеров с реакциями
                             loadNextReactionsId = END_FLAG;
                             totalReactions = this.allUsers.size();
+                        } else {
+                            loadNextReactionsId = messageReactionsList.next_offset;
                         }
                     }
                     finishLoading();
                 }));
+                return;
             }
 
             if (!END_FLAG.equals(loadNextSeenId) && isOut) {
-
                 TLRPC.TL_messages_getMessageReadParticipants req = new TLRPC.TL_messages_getMessageReadParticipants();
                 req.msg_id = messageId;
                 req.peer = MessagesController.getInstance(currentAccount).getInputPeer(dialogId);
@@ -280,6 +282,13 @@ public class ReactionsListView extends LinearLayout {
                         for (int i = 0, n = vector.objects.size(); i < n; i++) {
                             Object object = vector.objects.get(i);
                             if (object instanceof Long) seenIds.add((Long) object);
+                        }
+
+                        if (seenIds.isEmpty()) {
+                            loadNextSeenId = END_FLAG;
+                            totalSeen = this.allUsers.size() - totalReactions;
+                            finishLoading();
+                            return;
                         }
 
                         final TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(chatId);
@@ -330,9 +339,10 @@ public class ReactionsListView extends LinearLayout {
                                 finishLoading();
                             }));
                         }
+                    } else {
+                        finishLoading();
                     }
                 }));
-
             }
         }
     }

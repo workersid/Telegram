@@ -17,10 +17,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.MediaDataController;
+import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.ConnectionsManager;
@@ -34,6 +36,7 @@ import org.telegram.ui.Components.RecyclerListView;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 @SuppressLint("ViewConstructor")
 public class ReactionsListView extends LinearLayout {
@@ -42,24 +45,37 @@ public class ReactionsListView extends LinearLayout {
 
     private final RecyclerListView listView;
     private final ArrayList<UserInfoHolder> allUsers = new ArrayList<>();
+    private final HashMap<Long, TLRPC.User> allUsersMap = new HashMap<>();
     private final int currentAccount = UserConfig.selectedAccount;
     private int totalSeen;
     private int totalReactions;
     private LinearLayoutManager layoutManager;
     private boolean isLoading;
-    private int messageId;
-    private long chatId;
+
+    private final boolean isOut;
+    private final long chatId;
+    private final long dialogId;
+    private final int messageId;
+
     private String loadNextReactionsId;
     private String loadNextSeenId;
     private RecyclerListView.SelectionAdapter listAdapter;
 
-    public ReactionsListView(Context context, int totalSeen, int totalReactions, int messageId, long chatId) {
+    public ReactionsListView(Context context, MessageObject selectedObject, int totalSeen) {
         super(context);
         setOrientation(VERTICAL);
+        chatId = selectedObject.getChatId();
+        dialogId = selectedObject.getDialogId();
+        messageId = selectedObject.getId();
+        isOut = selectedObject.isOutOwner();
         this.totalSeen = totalSeen;
-        this.totalReactions = totalReactions;
-        this.messageId = messageId;
-        this.chatId = chatId;
+        if (selectedObject.messageOwner.reactions != null && !selectedObject.messageOwner.reactions.results.isEmpty()) {
+            int counter = 0;
+            for (TLRPC.TL_reactionCount result : selectedObject.messageOwner.reactions.results) {
+                counter += result.count;
+            }
+            totalReactions = counter;
+        }
 
         listView = new RecyclerListView(getContext());
         listView.setLayoutManager(layoutManager = new LinearLayoutManager(getContext()));
@@ -188,6 +204,17 @@ public class ReactionsListView extends LinearLayout {
     }
 
     @SuppressLint("NotifyDataSetChanged")
+    private void finishLoading() {
+        if (listAdapter != null) listAdapter.notifyDataSetChanged();
+
+        if (hasEmptyElements()) {
+            isLoading = false;
+            loadNext();
+        } else {
+            isLoading = false;
+        }
+    }
+
     private void loadNext() {
         //после загрузки, проверять нет ли пустых отображаемых элементов, если есть, подгрузка опять.
         if (!isLoading) {
@@ -206,6 +233,7 @@ public class ReactionsListView extends LinearLayout {
                 ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response1, error1) -> AndroidUtilities.runOnUIThread(() -> {
                     if (response1 != null) {
                         final ArrayList<UserInfoHolder> tmpUsers = new ArrayList<>();
+                        final HashMap<Long, TLRPC.User> tmpUsersMap = new HashMap<>();
                         TLRPC.TL_messages_messageReactionsList messageReactionsList = (TLRPC.TL_messages_messageReactionsList) response1;
 
                         HashMap<Long, String> userIdWithReactionMap = new HashMap<>();
@@ -222,8 +250,10 @@ public class ReactionsListView extends LinearLayout {
                                 reaction = userIdWithReactionMap.get(user.id);
                             }
                             tmpUsers.add(new UserInfoHolder(user, reaction != null, reaction));
+                            tmpUsersMap.put(user.id, user);
                         }
 
+                        this.allUsersMap.putAll(tmpUsersMap);
                         this.allUsers.addAll(tmpUsers);
 
                         if (messageReactionsList.next_offset == null) {
@@ -231,22 +261,77 @@ public class ReactionsListView extends LinearLayout {
                             loadNextReactionsId = END_FLAG;
                             totalReactions = this.allUsers.size();
                         }
-
-                        if (listAdapter != null) listAdapter.notifyDataSetChanged();
-
-                        if (hasEmptyElements()) {
-                            isLoading = false;
-                            loadNext();
-                        } else {
-                            isLoading = false;
-                        }
-                    } else {
-                        isLoading = false;
                     }
+                    finishLoading();
                 }));
             }
 
-            if (!END_FLAG.equals(loadNextSeenId)) {
+            if (!END_FLAG.equals(loadNextSeenId) && isOut) {
+
+                TLRPC.TL_messages_getMessageReadParticipants req = new TLRPC.TL_messages_getMessageReadParticipants();
+                req.msg_id = messageId;
+                req.peer = MessagesController.getInstance(currentAccount).getInputPeer(dialogId);
+
+                ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+                    if (error == null) {
+                        TLRPC.Vector vector = (TLRPC.Vector) response;
+                        //id-шники тех кто просмотрел
+                        final HashSet<Long> seenIds = new HashSet<>();
+                        for (int i = 0, n = vector.objects.size(); i < n; i++) {
+                            Object object = vector.objects.get(i);
+                            if (object instanceof Long) seenIds.add((Long) object);
+                        }
+
+                        final TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(chatId);
+                        if (ChatObject.isChannel(chat)) {
+                            TLRPC.TL_channels_getParticipants usersReq = new TLRPC.TL_channels_getParticipants();
+                            usersReq.limit = 50;
+                            usersReq.offset = 0;
+                            usersReq.filter = new TLRPC.TL_channelParticipantsRecent();
+                            usersReq.channel = MessagesController.getInstance(currentAccount).getInputChannel(chat.id);
+                            ConnectionsManager.getInstance(currentAccount).sendRequest(usersReq, (response1, error1) -> AndroidUtilities.runOnUIThread(() -> {
+                                if (response1 != null) {
+                                    TLRPC.TL_channels_channelParticipants channelsChannelParticipants = (TLRPC.TL_channels_channelParticipants) response1;
+                                    final ArrayList<UserInfoHolder> tmpUsers = new ArrayList<>();
+
+                                    for (int i = 0; i < channelsChannelParticipants.users.size(); i++) {
+                                        TLRPC.User user = channelsChannelParticipants.users.get(i);
+                                        MessagesController.getInstance(currentAccount).putUser(user, false);
+                                        if (!allUsersMap.containsKey(user.id) && seenIds.contains(user.id)) {
+                                            tmpUsers.add(new UserInfoHolder(user, false, null));
+                                        }
+                                    }
+
+                                    this.allUsers.addAll(tmpUsers);
+                                    loadNextSeenId = END_FLAG;
+                                    totalSeen = this.allUsers.size() - totalReactions;
+                                }
+                                finishLoading();
+                            }));
+                        } else {
+                            TLRPC.TL_messages_getFullChat usersReq = new TLRPC.TL_messages_getFullChat();
+                            usersReq.chat_id = chat.id;
+                            ConnectionsManager.getInstance(currentAccount).sendRequest(usersReq, (response1, error1) -> AndroidUtilities.runOnUIThread(() -> {
+                                if (response1 != null) {
+                                    TLRPC.TL_messages_chatFull chatFull = (TLRPC.TL_messages_chatFull) response1;
+                                    final ArrayList<UserInfoHolder> tmpUsers = new ArrayList<>();
+                                    for (int i = 0; i < chatFull.users.size(); i++) {
+                                        TLRPC.User user = chatFull.users.get(i);
+                                        MessagesController.getInstance(currentAccount).putUser(user, false);
+                                        if (!allUsersMap.containsKey(user.id) && seenIds.contains(user.id)) {
+                                            tmpUsers.add(new UserInfoHolder(user, false, null));
+                                        }
+                                    }
+
+                                    this.allUsers.addAll(tmpUsers);
+                                    loadNextSeenId = END_FLAG;
+                                    totalSeen = this.allUsers.size() - totalReactions;
+                                }
+                                finishLoading();
+                            }));
+                        }
+                    }
+                }));
 
             }
         }

@@ -67,7 +67,7 @@ public class ReactionsFactory {
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    public static ReactionsCounterView createReactionsCounterView(ViewGroup parent, MessageObject selectedObject, ReactionsCounterDelegate delegate) {
+    public static ReactionsCounterView createReactionsCounterView(ViewGroup parent, final MessageObject selectedObject, ReactionsCounterDelegate delegate) {
         final ReactionsCounterView reactionsCounterView = new ReactionsCounterView(parent.getContext(), selectedObject);
         parent.addView(reactionsCounterView);
 
@@ -142,10 +142,8 @@ public class ReactionsFactory {
                 linearLayout.setOrientation(LinearLayout.VERTICAL);
                 ReactionsListView listView = new ReactionsListView(
                         delegate.getContext(),
-                        reactionsCounterView.getTotalSeen(),
-                        reactionsCounterView.getTotalReactions(),
-                        reactionsCounterView.getMessageId(),
-                        reactionsCounterView.getChatId()
+                        selectedObject,
+                        reactionsCounterView.getTotalSeen()
                 );
                 int listViewTotalHeight = AndroidUtilities.dp(8) + AndroidUtilities.dp(44) * listView.getListView().getAdapter().getItemCount() + AndroidUtilities.dp(16);
 

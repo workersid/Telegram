@@ -19940,13 +19940,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             shadowDrawable.getPadding(backgroundPaddings);
             popupLayout.setBackgroundColor(getThemedColor(Theme.key_actionBarDefaultSubmenuBackground));
 
-
-            boolean showMessageSeen = currentChat != null && message.isOutOwner() && message.isSent() && !message.isEditing() && !message.isSending() && !message.isSendError() && !message.isContentUnread() && !message.isUnread() && (ConnectionsManager.getInstance(currentAccount).getCurrentTime() - message.messageOwner.date < 7 * 86400)  && (ChatObject.isMegagroup(currentChat) || !ChatObject.isChannel(currentChat)) && chatInfo != null && chatInfo.participants_count < 50 && !(message.messageOwner.action instanceof TLRPC.TL_messageActionChatJoinedByRequest);
-
             int addedReactions = 0;
-            if (selectedObject.hasReactions() && !showMessageSeen) {
+            if (selectedObject.hasReactions()) {
                 addedReactions = 1;
-                ReactionsFactory.createReactionsCounterView(popupLayout, selectedObject, false);
+                ReactionsFactory.createReactionsCounterView(popupLayout, selectedObject);
             }
 
             scrimPopupWindowItems = new ActionBarMenuSubItem[items.size() + (selectedObject.isSponsored() ? 1 : 0) + addedReactions];
@@ -20058,19 +20055,13 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
             MessageSeenView messageSeenView = null;
             FrameLayout messageSeenLayout = null;
+            boolean showMessageSeen = !selectedObject.hasReactions() && currentChat != null && message.isOutOwner() && message.isSent() && !message.isEditing() && !message.isSending() && !message.isSendError() && !message.isContentUnread() && !message.isUnread() && (ConnectionsManager.getInstance(currentAccount).getCurrentTime() - message.messageOwner.date < 7 * 86400)  && (ChatObject.isMegagroup(currentChat) || !ChatObject.isChannel(currentChat)) && chatInfo != null && chatInfo.participants_count < 50 && !(message.messageOwner.action instanceof TLRPC.TL_messageActionChatJoinedByRequest);
             if (showMessageSeen) {
                 messageSeenView = new MessageSeenView(contentView.getContext(), currentAccount, message, currentChat);
                 Drawable shadowDrawable2 = ContextCompat.getDrawable(contentView.getContext(), R.drawable.popup_fixed_alert).mutate();
                 shadowDrawable2.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground), PorterDuff.Mode.MULTIPLY));
                 messageSeenLayout = new FrameLayout(contentView.getContext());
-
-                if (selectedObject.hasReactions()) {
-                    ReactionsFactory.createReactionsCounterView(messageSeenLayout, selectedObject, true);
-                    messageSeenLayout.addView(messageSeenView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 44, 0, 0, 56, 0, 0));
-                } else {
-                    messageSeenLayout.addView(messageSeenView);
-                }
-
+                messageSeenLayout.addView(messageSeenView);
                 messageSeenLayout.setBackground(shadowDrawable2);
                 MessageSeenView finalMessageSeenView = messageSeenView;
                 messageSeenView.setOnClickListener(new View.OnClickListener() {
@@ -20242,7 +20233,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 showDialog(new FullScreenReactionDialog(contentView.getContext(), reaction));
             });
             if (messageSeenLayout != null) {
-                scrimPopupContainerLayout.addView(messageSeenLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 60 + (selectedObject.hasReactions() ? 56 : 0)));
+                scrimPopupContainerLayout.addView(messageSeenLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 60));
             }
             scrimPopupContainerLayout.addView(popupLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, showMessageSeen ? -8 : 0, 0, 0));
 

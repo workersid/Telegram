@@ -19,7 +19,10 @@ import androidx.annotation.NonNull;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.ImageLocation;
+import org.telegram.messenger.MessagesController;
+import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
+import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AvatarsImageView;
@@ -31,7 +34,7 @@ import org.telegram.ui.Components.NumberTextView;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EmotionView extends LinearLayout {
+public class EmotionCell extends LinearLayout {
 
     private final AvatarsImageView avatarsImageView;
     private final BackupImageView imageView;
@@ -47,7 +50,7 @@ public class EmotionView extends LinearLayout {
     private final int currentAccount = UserConfig.selectedAccount;
 
     @SuppressLint("ClickableViewAccessibility")
-    public EmotionView(@NonNull Context context) {
+    public EmotionCell(@NonNull Context context) {
         super(context);
         setOrientation(HORIZONTAL);
         bgPaint.setColor(Color.BLUE);
@@ -86,27 +89,70 @@ public class EmotionView extends LinearLayout {
 
         if (animated) animatedStroke(!wasSelected);
 
-        TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(emotionInfo.staticIcon.thumbs, 90);
-        imageView.setImage(ImageLocation.getForDocument(thumb, emotionInfo.staticIcon), "50_50", "webp", null, inputEmotionInfo);
+        if (emotionInfo.staticIcon != null) {
+            TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(emotionInfo.staticIcon.thumbs, 90);
+            imageView.setImage(ImageLocation.getForDocument(thumb, emotionInfo.staticIcon), "50_50", "webp", null, inputEmotionInfo);
+        } else {
+            imageView.setImageResource(R.drawable.msg_reactions_filled);
+        }
+
         numberTextView.setNumber(emotionInfo.count, animated);
 
-        List<TLRPC.User> users = emotionInfo.lastThreeUsers;
-        for (int i = 0; i < 3; i++) {
-            if (i < users.size()) {
-                avatarsImageView.setObject(i, currentAccount, users.get(i));
+        List<Long> userIds = emotionInfo.lastThreeUsers;
+
+        boolean hasUnknownUsers = false;
+
+        if (emotionInfo.count <= 3 && userIds.size() > 0) {
+            List<TLRPC.User> users = new ArrayList<>(3);
+
+            for (long userId : userIds) {
+                TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(userId);
+                users.add(user);
+                if (user == null) {
+                    hasUnknownUsers = true;
+                }
+            }
+
+            for (int i = 0; i < 3; i++) {
+                if (i < userIds.size()) {
+                    avatarsImageView.setObject(i, currentAccount, users.get(i));
+                } else {
+                    avatarsImageView.setObject(i, currentAccount, null);
+                }
+            }
+            if (userIds.size() == 1) {
+                avatarsImageView.setTranslationX(AndroidUtilities.dp(24));
+            } else if (userIds.size() == 2) {
+                avatarsImageView.setTranslationX(AndroidUtilities.dp(12));
             } else {
+                avatarsImageView.setTranslationX(0);
+            }
+        } else {
+            for (int i = 0; i < 3; i++) {
                 avatarsImageView.setObject(i, currentAccount, null);
             }
-        }
-        if (users.size() == 1) {
-            avatarsImageView.setTranslationX(AndroidUtilities.dp(24));
-        } else if (users.size() == 2) {
-            avatarsImageView.setTranslationX(AndroidUtilities.dp(12));
-        } else {
             avatarsImageView.setTranslationX(0);
         }
 
         avatarsImageView.commitTransition(animated);
+
+        if (hasUnknownUsers) {
+            TLRPC.TL_messages_getMessageReactionsList req = new TLRPC.TL_messages_getMessageReactionsList();
+            req.limit = 100;
+            req.id = emotionInfo.messageId;
+            req.peer = MessagesController.getInstance(currentAccount).getInputPeer(emotionInfo.dialogId);
+
+            ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response1, error1) -> AndroidUtilities.runOnUIThread(() -> {
+                if (response1 != null) {
+                    TLRPC.TL_messages_messageReactionsList users = (TLRPC.TL_messages_messageReactionsList) response1;
+                    for (int i = 0; i < users.users.size(); i++) {
+                        TLRPC.User user = users.users.get(i);
+                        MessagesController.getInstance(currentAccount).putUser(user, false);
+                    }
+                    setEmotionInfo(emotionInfo, true);
+                }
+            }));
+        }
     }
 
     private void animatedStroke(boolean show) {
@@ -159,8 +205,11 @@ public class EmotionView extends LinearLayout {
 }
 
 class EmotionInfo {
-    public List<TLRPC.User> lastThreeUsers = new ArrayList<>();
+    public List<Long> lastThreeUsers = new ArrayList<>();
     public boolean isSelectedByCurrentUser;
     public int count;
     public TLRPC.Document staticIcon;
+    public String reaction;
+    public int messageId;
+    public long dialogId;
 }

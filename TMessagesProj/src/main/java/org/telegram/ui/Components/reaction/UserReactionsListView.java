@@ -43,9 +43,10 @@ public class UserReactionsListView extends LinearLayout {
 
     private static final String END_FLAG = "end";
 
-
     private final ArrayList<UserInfoHolder> allUsers = new ArrayList<>();
     private final HashMap<Long, TLRPC.User> allUsersMap = new HashMap<>();
+    private final ArrayList<EmotionInfo> emotionInfoList = new ArrayList<>();
+
     private final int currentAccount = UserConfig.selectedAccount;
 
     private final RecyclerListView usersListView;
@@ -77,33 +78,40 @@ public class UserReactionsListView extends LinearLayout {
 
         this.totalSeen = totalSeen;
         totalReactions = EmotionUtils.extractTotalReactions(selectedObject);
+        emotionInfoList.addAll(EmotionUtils.extractEmotionInfoList(selectedObject, MediaDataController.getInstance(currentAccount)));
 
         FrameLayout tabsContainer = new FrameLayout(getContext());
         tabsListView = new RecyclerListView(getContext());
-        tabsListView.setLayoutManager(tabsLayoutManager = new LinearLayoutManager(getContext()));
+        tabsListView.setLayoutManager(tabsLayoutManager = new LinearLayoutManager(getContext(), RecyclerView.HORIZONTAL, false));
         tabsListView.setAdapter(new RecyclerListView.SelectionAdapter() {
 
             @Override
             public boolean isEnabled(RecyclerView.ViewHolder holder) {
-                return true;
+                return false;
             }
 
             @NonNull
             @Override
             public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-                return null;
+                EmotionCell cell = new EmotionCell(parent.getContext());
+                cell.setLayoutParams(new RecyclerView.LayoutParams(LayoutHelper.WRAP_CONTENT, AndroidUtilities.dp(48)));
+                return new RecyclerListView.Holder(cell);
             }
 
             @Override
             public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-
+                if (holder.itemView instanceof EmotionCell) {
+                    EmotionCell cell = (EmotionCell) holder.itemView;
+                    cell.setEmotionInfo(emotionInfoList.get(position), false);
+                }
             }
 
             @Override
             public int getItemCount() {
-                return 0;
+                return emotionInfoList.size();
             }
         });
+        tabsContainer.addView(tabsListView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         addView(tabsContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48));
 
         usersListView = new RecyclerListView(getContext());

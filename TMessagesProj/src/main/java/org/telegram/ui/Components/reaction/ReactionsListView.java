@@ -43,15 +43,21 @@ public class ReactionsListView extends LinearLayout {
 
     private static final String END_FLAG = "end";
 
-    private final RecyclerListView listView;
+
     private final ArrayList<UserInfoHolder> allUsers = new ArrayList<>();
     private final HashMap<Long, TLRPC.User> allUsersMap = new HashMap<>();
     private final int currentAccount = UserConfig.selectedAccount;
+
+    private final RecyclerListView usersListView;
+    private final RecyclerListView tabsListView;
+    private LinearLayoutManager usersLayoutManager;
+    private LinearLayoutManager tabsLayoutManager;
+    private RecyclerListView.SelectionAdapter usersListAdapter;
+    private RecyclerListView.SelectionAdapter tabsListAdapter;
+
     private int totalSeen;
     private int totalReactions;
-    private LinearLayoutManager layoutManager;
     private boolean isLoading;
-
     private final boolean isOut;
     private final long chatId;
     private final long dialogId;
@@ -59,7 +65,7 @@ public class ReactionsListView extends LinearLayout {
 
     private String loadNextReactionsId;
     private String loadNextSeenId;
-    private RecyclerListView.SelectionAdapter listAdapter;
+
 
     public ReactionsListView(Context context, MessageObject selectedObject, int totalSeen) {
         super(context);
@@ -68,18 +74,41 @@ public class ReactionsListView extends LinearLayout {
         dialogId = selectedObject.getDialogId();
         messageId = selectedObject.getId();
         isOut = selectedObject.isOutOwner();
-        this.totalSeen = totalSeen;
-        if (selectedObject.messageOwner.reactions != null && !selectedObject.messageOwner.reactions.results.isEmpty()) {
-            int counter = 0;
-            for (TLRPC.TL_reactionCount result : selectedObject.messageOwner.reactions.results) {
-                counter += result.count;
-            }
-            totalReactions = counter;
-        }
 
-        listView = new RecyclerListView(getContext());
-        listView.setLayoutManager(layoutManager = new LinearLayoutManager(getContext()));
-        listView.addItemDecoration(new RecyclerView.ItemDecoration() {
+        this.totalSeen = totalSeen;
+        totalReactions = ReactionsUtils.extractTotalReactions(selectedObject);
+
+        FrameLayout tabsContainer = new FrameLayout(getContext());
+        tabsListView = new RecyclerListView(getContext());
+        tabsListView.setLayoutManager(tabsLayoutManager = new LinearLayoutManager(getContext()));
+        tabsListView.setAdapter(new RecyclerListView.SelectionAdapter() {
+
+            @Override
+            public boolean isEnabled(RecyclerView.ViewHolder holder) {
+                return true;
+            }
+
+            @NonNull
+            @Override
+            public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+                return null;
+            }
+
+            @Override
+            public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+
+            }
+
+            @Override
+            public int getItemCount() {
+                return 0;
+            }
+        });
+        addView(tabsContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48));
+
+        usersListView = new RecyclerListView(getContext());
+        usersListView.setLayoutManager(usersLayoutManager = new LinearLayoutManager(getContext()));
+        usersListView.addItemDecoration(new RecyclerView.ItemDecoration() {
             @Override
             public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
                 int p = parent.getChildAdapterPosition(view);
@@ -91,7 +120,7 @@ public class ReactionsListView extends LinearLayout {
                 }
             }
         });
-        listView.setAdapter(listAdapter = new RecyclerListView.SelectionAdapter() {
+        usersListView.setAdapter(usersListAdapter = new RecyclerListView.SelectionAdapter() {
 
             private static final int TYPE_USER = 0;
             private static final int TYPE_HOLDER_REACTION = 1;
@@ -164,7 +193,7 @@ public class ReactionsListView extends LinearLayout {
             }
         });
 
-        addView(listView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+        addView(usersListView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
     }
 
     @Override
@@ -178,8 +207,8 @@ public class ReactionsListView extends LinearLayout {
         super.onDetachedFromWindow();
     }
 
-    public RecyclerListView getListView() {
-        return listView;
+    public RecyclerListView getUsersListView() {
+        return usersListView;
     }
 
     public TLRPC.User getUserByPos(int pos) {
@@ -190,8 +219,8 @@ public class ReactionsListView extends LinearLayout {
     }
 
     private boolean hasEmptyElements() {
-        int firstVisible = layoutManager.findFirstVisibleItemPosition();
-        int lastVisible = layoutManager.findLastVisibleItemPosition();
+        int firstVisible = usersLayoutManager.findFirstVisibleItemPosition();
+        int lastVisible = usersLayoutManager.findLastVisibleItemPosition();
         for (int i = firstVisible; i <= lastVisible; i++) {
             if (allUsers.size() > i) {
                 UserInfoHolder holder = allUsers.get(i);
@@ -205,7 +234,7 @@ public class ReactionsListView extends LinearLayout {
 
     @SuppressLint("NotifyDataSetChanged")
     private void finishLoading(boolean withError) {
-        if (listAdapter != null && !withError) listAdapter.notifyDataSetChanged();
+        if (usersListAdapter != null && !withError) usersListAdapter.notifyDataSetChanged();
 
         if (!withError && hasEmptyElements()) {
             isLoading = false;

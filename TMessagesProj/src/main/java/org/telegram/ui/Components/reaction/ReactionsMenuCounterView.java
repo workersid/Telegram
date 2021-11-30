@@ -37,7 +37,7 @@ import org.telegram.ui.Components.LayoutHelper;
 import java.util.ArrayList;
 
 @SuppressLint("ViewConstructor")
-public class ReactionsCounterView extends FrameLayout {
+public class ReactionsMenuCounterView extends FrameLayout {
 
     private final ArrayList<TLRPC.User> users = new ArrayList<>();
     private final AvatarsImageView avatarsImageView;
@@ -54,7 +54,7 @@ public class ReactionsCounterView extends FrameLayout {
     private MessageObject selectedObject;
     FlickerLoadingView flickerLoadingView;
 
-    public ReactionsCounterView(@NonNull Context context, MessageObject selectedObject) {
+    public ReactionsMenuCounterView(@NonNull Context context, MessageObject selectedObject) {
         super(context);
         chatId = selectedObject.getChatId();
         dialogId = selectedObject.getDialogId();

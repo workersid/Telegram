@@ -20001,7 +20001,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     @Override
                     public View getReactionsUsersPopupWindowContent() {
                         if (reactionsUsersPopupWindow != null && reactionsUsersPopupWindow.isShowing()) {
-                            return mesageSeenUsersPopupWindow.getContentView();
+                            return reactionsUsersPopupWindow.getContentView();
                         }
                         return null;
                     }
@@ -20348,6 +20348,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     }
                     if (mesageSeenUsersPopupWindow != null) {
                         mesageSeenUsersPopupWindow.dismiss();
+                    }
+                    if (reactionsUsersPopupWindow != null) {
+                        reactionsUsersPopupWindow.dismiss();
                     }
                 }
             };

@@ -67,9 +67,9 @@ public class ReactionsFactory {
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    public static ReactionsCounterView createReactionsCounterView(ViewGroup parent, final MessageObject selectedObject, ReactionsCounterDelegate delegate) {
-        final ReactionsCounterView reactionsCounterView = new ReactionsCounterView(parent.getContext(), selectedObject);
-        parent.addView(reactionsCounterView);
+    public static ReactionsMenuCounterView createReactionsCounterView(ViewGroup parent, final MessageObject selectedObject, ReactionsCounterDelegate delegate) {
+        final ReactionsMenuCounterView reactionsMenuCounterView = new ReactionsMenuCounterView(parent.getContext(), selectedObject);
+        parent.addView(reactionsMenuCounterView);
 
         View gap = new View(parent.getContext());
         gap.setBackgroundColor(Color.GRAY);
@@ -77,13 +77,13 @@ public class ReactionsFactory {
         gap.setTag(1001);
         gap.setTag(R.id.object_tag, 1);
         parent.addView(gap);
-        LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams) reactionsCounterView.getLayoutParams();
+        LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams) reactionsMenuCounterView.getLayoutParams();
         if (LocaleController.isRTL) layoutParams.gravity = Gravity.RIGHT;
         layoutParams.width = LayoutHelper.MATCH_PARENT;
         layoutParams.height = AndroidUtilities.dp(6);
         gap.setLayoutParams(layoutParams);
 
-        reactionsCounterView.setOnClickListener(v -> {
+        reactionsMenuCounterView.setOnClickListener(v -> {
             if (delegate != null && delegate.getScrimPopupWindow() != null) {
                 int totalHeight = delegate.getHeightWithKeyboard();
                 int availableHeight = totalHeight - delegate.getScrimPopupY() - AndroidUtilities.dp(46 + 16);
@@ -143,9 +143,9 @@ public class ReactionsFactory {
                 ReactionsListView listView = new ReactionsListView(
                         delegate.getContext(),
                         selectedObject,
-                        reactionsCounterView.getTotalSeen()
+                        reactionsMenuCounterView.getTotalSeen()
                 );
-                int listViewTotalHeight = AndroidUtilities.dp(8) + AndroidUtilities.dp(44) * listView.getListView().getAdapter().getItemCount() + AndroidUtilities.dp(16);
+                int listViewTotalHeight = AndroidUtilities.dp(8) + AndroidUtilities.dp(44) * listView.getUsersListView().getAdapter().getItemCount() + AndroidUtilities.dp(16);
 
                 backContainer.addView(cell);
                 linearLayout.addView(backContainer);
@@ -201,7 +201,7 @@ public class ReactionsFactory {
                     reactionsUsersPopupWindow.dismiss(true);
                 });
 
-                listView.getListView().setOnItemClickListener((view1, position) -> {
+                listView.getUsersListView().setOnItemClickListener((view1, position) -> {
                     TLRPC.User user = listView.getUserByPos(position);
                     if (user == null) {
                         return;
@@ -214,6 +214,6 @@ public class ReactionsFactory {
                 });
             }
         });
-        return reactionsCounterView;
+        return reactionsMenuCounterView;
     }
 }

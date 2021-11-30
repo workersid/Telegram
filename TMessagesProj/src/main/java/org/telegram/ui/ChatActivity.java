@@ -654,6 +654,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private int popupAnimationIndex = -1;
     private AnimatorSet scrimAnimatorSet;
     private ActionBarPopupWindow scrimPopupWindow;
+    private ActionBarPopupWindow reactionsUsersPopupWindow;
     private ActionBarPopupWindow mesageSeenUsersPopupWindow;
     private int scrimPopupX, scrimPopupY;
     private ActionBarMenuSubItem[] scrimPopupWindowItems;
@@ -19943,7 +19944,73 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             int addedReactions = 0;
             if (selectedObject.hasReactions()) {
                 addedReactions = 1;
-                ReactionsFactory.createReactionsCounterView(popupLayout, selectedObject);
+                ReactionsFactory.createReactionsCounterView(popupLayout, selectedObject, new ReactionsFactory.ReactionsCounterDelegate() {
+                    @Override
+                    public ActionBarPopupWindow getScrimPopupWindow() {
+                        return scrimPopupWindow;
+                    }
+
+                    @Override
+                    public Context getContext() {
+                        return contentView.getContext();
+                    }
+
+                    @Override
+                    public ThemeDelegate getThemeDelegate() {
+                        return themeDelegate;
+                    }
+
+                    @Override
+                    public void openFragment(BaseFragment fragment) {
+                        presentFragment(fragment);
+                    }
+
+                    @Override
+                    public int getScrimPopupY() {
+                        return scrimPopupY;
+                    }
+
+                    @Override
+                    public int getScrimPopupX() {
+                        return scrimPopupX;
+                    }
+
+                    @Override
+                    public int getHeightWithKeyboard() {
+                        return contentView.getHeightWithKeyboard();
+                    }
+
+                    @Override
+                    public int getKeyboardHeight() {
+                        return contentView.getKeyboardHeight();
+                    }
+
+                    @Override
+                    public void showReactionsUsersPopupWindow(ActionBarPopupWindow popupWindow, int x, int y) {
+                        reactionsUsersPopupWindow = popupWindow;
+                        reactionsUsersPopupWindow.showAtLocation(chatListView, Gravity.LEFT | Gravity.TOP, x, y);
+                    }
+
+                    @Override
+                    public void dismissReactionsUsersPopupWindow() {
+                        if (reactionsUsersPopupWindow != null && reactionsUsersPopupWindow.isShowing()) {
+                            reactionsUsersPopupWindow.dismiss();
+                        }
+                    }
+
+                    @Override
+                    public View getReactionsUsersPopupWindowContent() {
+                        if (reactionsUsersPopupWindow != null && reactionsUsersPopupWindow.isShowing()) {
+                            return mesageSeenUsersPopupWindow.getContentView();
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public void deleteReactionsUsersPopupWindowLink() {
+                        reactionsUsersPopupWindow = null;
+                    }
+                });
             }
 
             scrimPopupWindowItems = new ActionBarMenuSubItem[items.size() + (selectedObject.isSponsored() ? 1 : 0) + addedReactions];

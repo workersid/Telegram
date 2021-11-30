@@ -133,6 +133,22 @@ public class ReactionsCounterView extends FrameLayout {
         }
     }
 
+    public int getTotalReactions() {
+        return totalReactions;
+    }
+
+    public int getTotalSeen() {
+        return totalSeen;
+    }
+
+    public int getMessageId() {
+        return messageId;
+    }
+
+    public long getChatId() {
+        return chatId;
+    }
+
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();

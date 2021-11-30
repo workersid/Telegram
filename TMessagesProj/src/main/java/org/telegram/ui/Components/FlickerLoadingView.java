@@ -34,6 +34,8 @@ public class FlickerLoadingView extends View {
     public final static int MESSAGE_SEEN_TYPE = 13;
     public final static int CHAT_THEMES_TYPE = 14;
     public final static int MEMBER_REQUESTS_TYPE = 15;
+    public final static int REACTION_USERS_SEEN_TYPE = 16;
+    public final static int REACTION_USERS_TYPE = 17;
 
     private int gradientWidth;
     private LinearGradient gradient;
@@ -71,7 +73,7 @@ public class FlickerLoadingView extends View {
 
     public void setViewType(int type) {
         this.viewType = type;
-        if (viewType == BOTS_MENU_TYPE) {
+        if (viewType == BOTS_MENU_TYPE || viewType == REACTION_USERS_SEEN_TYPE || viewType == REACTION_USERS_TYPE) {
             Random random = new Random();
             randomParams = new float[2];
             for (int i = 0; i < 2; i++) {
@@ -492,7 +494,37 @@ public class FlickerLoadingView extends View {
                     break;
                 }
             }
+        } else if (getViewType() == REACTION_USERS_SEEN_TYPE || getViewType() == REACTION_USERS_TYPE) {
+            int count = 0;
+            int radiusBig = AndroidUtilities.dp(16);
+            int radiusSmall = AndroidUtilities.dp(10);
+            int rectRadius = AndroidUtilities.dp(4);
+            while (h <= getMeasuredHeight()) {
+                canvas.drawCircle(checkRtl(paddingLeft + AndroidUtilities.dp(12)) + radiusBig, h + AndroidUtilities.dp(8) + radiusBig, radiusBig, paint);
+
+                float endFirst = getMeasuredWidth() * 0.4f + AndroidUtilities.dp(30 * randomParams[0]);
+
+                rectF.set(paddingLeft + AndroidUtilities.dp(58), h + AndroidUtilities.dp(18), paddingLeft + endFirst, h + AndroidUtilities.dp(28));
+                checkRtl(rectF);
+                canvas.drawRoundRect(rectF, rectRadius, rectRadius, paint);
+
+                float endSecond = endFirst + AndroidUtilities.dp(8) + AndroidUtilities.dp(30) + ((getMeasuredWidth() - AndroidUtilities.dp(70) - endFirst - AndroidUtilities.dp(8)) * randomParams[0]);
+                rectF.set(paddingLeft + endFirst + AndroidUtilities.dp(8), h + AndroidUtilities.dp(18), paddingLeft + endSecond, h + AndroidUtilities.dp(28));
+                checkRtl(rectF);
+                canvas.drawRoundRect(rectF, rectRadius, rectRadius, paint);
+
+                if (getViewType() == REACTION_USERS_TYPE) {
+                    canvas.drawCircle(checkRtl(getMeasuredWidth() - AndroidUtilities.dp(32)) + radiusSmall, h + AndroidUtilities.dp(12) + radiusSmall, radiusSmall, paint);
+                }
+
+                h += getCellHeight(getMeasuredWidth());
+                count++;
+                if (isSingleCell && count >= itemsCount) {
+                    break;
+                }
+            }
         }
+
         invalidate();
     }
 
@@ -595,7 +627,10 @@ public class FlickerLoadingView extends View {
             return AndroidUtilities.dp(103);
         } else if (getViewType() == MEMBER_REQUESTS_TYPE) {
             return AndroidUtilities.dp(107);
+        } else if (getViewType() == REACTION_USERS_SEEN_TYPE || getViewType() == REACTION_USERS_TYPE) {
+            return AndroidUtilities.dp(44);
         }
+
         return 0;
     }
 

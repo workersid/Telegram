@@ -5,7 +5,7 @@ import org.telegram.tgnet.TLRPC;
 
 import java.util.List;
 
-public class ReactionsUtils {
+public class EmotionUtils {
     public static int extractTotalReactions(MessageObject selectedObject) {
         if (selectedObject.messageOwner.reactions != null && !selectedObject.messageOwner.reactions.results.isEmpty()) {
             int counter = 0;

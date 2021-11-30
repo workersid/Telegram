@@ -67,9 +67,9 @@ public class ReactionsFactory {
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    public static ReactionsMenuCounterView createReactionsCounterView(ViewGroup parent, final MessageObject selectedObject, ReactionsCounterDelegate delegate) {
-        final ReactionsMenuCounterView reactionsMenuCounterView = new ReactionsMenuCounterView(parent.getContext(), selectedObject);
-        parent.addView(reactionsMenuCounterView);
+    public static MenuReactionCounterView createReactionsCounterView(ViewGroup parent, final MessageObject selectedObject, ReactionsCounterDelegate delegate) {
+        final MenuReactionCounterView menuReactionCounterView = new MenuReactionCounterView(parent.getContext(), selectedObject);
+        parent.addView(menuReactionCounterView);
 
         View gap = new View(parent.getContext());
         gap.setBackgroundColor(Color.GRAY);
@@ -77,13 +77,13 @@ public class ReactionsFactory {
         gap.setTag(1001);
         gap.setTag(R.id.object_tag, 1);
         parent.addView(gap);
-        LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams) reactionsMenuCounterView.getLayoutParams();
+        LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams) menuReactionCounterView.getLayoutParams();
         if (LocaleController.isRTL) layoutParams.gravity = Gravity.RIGHT;
         layoutParams.width = LayoutHelper.MATCH_PARENT;
         layoutParams.height = AndroidUtilities.dp(6);
         gap.setLayoutParams(layoutParams);
 
-        reactionsMenuCounterView.setOnClickListener(v -> {
+        menuReactionCounterView.setOnClickListener(v -> {
             if (delegate != null && delegate.getScrimPopupWindow() != null) {
                 int totalHeight = delegate.getHeightWithKeyboard();
                 int availableHeight = totalHeight - delegate.getScrimPopupY() - AndroidUtilities.dp(46 + 16);
@@ -140,10 +140,10 @@ public class ReactionsFactory {
                     }
                 });
                 linearLayout.setOrientation(LinearLayout.VERTICAL);
-                ReactionsListView listView = new ReactionsListView(
+                UserReactionsListView listView = new UserReactionsListView(
                         delegate.getContext(),
                         selectedObject,
-                        reactionsMenuCounterView.getTotalSeen()
+                        menuReactionCounterView.getTotalSeen()
                 );
                 int listViewTotalHeight = AndroidUtilities.dp(8) + AndroidUtilities.dp(44) * listView.getUsersListView().getAdapter().getItemCount() + AndroidUtilities.dp(16);
 
@@ -214,6 +214,6 @@ public class ReactionsFactory {
                 });
             }
         });
-        return reactionsMenuCounterView;
+        return menuReactionCounterView;
     }
 }

@@ -34,7 +34,7 @@ public class ChooseReactionAdapter extends RecyclerListView.SelectionAdapter {
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = new ReactionStickerCell(context);
+        View view = new ChooseReactionStickerCell(context);
         view.setLayoutParams(new RecyclerView.LayoutParams(AndroidUtilities.dp(44), AndroidUtilities.dp(44)));
         return new RecyclerListView.Holder(view);
     }
@@ -42,7 +42,7 @@ public class ChooseReactionAdapter extends RecyclerListView.SelectionAdapter {
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         TLRPC.TL_availableReaction tlReaction = cache.get(position);
-        ReactionStickerCell cell = (ReactionStickerCell) holder.itemView;
+        ChooseReactionStickerCell cell = (ChooseReactionStickerCell) holder.itemView;
         cell.setSticker(tlReaction.select_animation, tlReaction);
     }
 

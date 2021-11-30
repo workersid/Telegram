@@ -39,7 +39,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 @SuppressLint("ViewConstructor")
-public class ReactionsListView extends LinearLayout {
+public class UserReactionsListView extends LinearLayout {
 
     private static final String END_FLAG = "end";
 
@@ -67,7 +67,7 @@ public class ReactionsListView extends LinearLayout {
     private String loadNextSeenId;
 
 
-    public ReactionsListView(Context context, MessageObject selectedObject, int totalSeen) {
+    public UserReactionsListView(Context context, MessageObject selectedObject, int totalSeen) {
         super(context);
         setOrientation(VERTICAL);
         chatId = selectedObject.getChatId();
@@ -76,7 +76,7 @@ public class ReactionsListView extends LinearLayout {
         isOut = selectedObject.isOutOwner();
 
         this.totalSeen = totalSeen;
-        totalReactions = ReactionsUtils.extractTotalReactions(selectedObject);
+        totalReactions = EmotionUtils.extractTotalReactions(selectedObject);
 
         FrameLayout tabsContainer = new FrameLayout(getContext());
         tabsListView = new RecyclerListView(getContext());
@@ -128,8 +128,8 @@ public class ReactionsListView extends LinearLayout {
 
             @Override
             public boolean isEnabled(RecyclerView.ViewHolder holder) {
-                if (holder.itemView instanceof ReactionsListView.UserCell) {
-                    ReactionsListView.UserCell cell = (ReactionsListView.UserCell) holder.itemView;
+                if (holder.itemView instanceof UserReactionsListView.UserCell) {
+                    UserReactionsListView.UserCell cell = (UserReactionsListView.UserCell) holder.itemView;
                     return cell.isEnabled();
                 }
                 return false;
@@ -140,13 +140,13 @@ public class ReactionsListView extends LinearLayout {
             public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
                 switch (viewType) {
                     case TYPE_USER:
-                        ReactionsListView.UserCell userCell = new ReactionsListView.UserCell(parent.getContext());
+                        UserReactionsListView.UserCell userCell = new UserReactionsListView.UserCell(parent.getContext());
                         userCell.setLayoutParams(new RecyclerView.LayoutParams(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
                         userCell.setMinimumWidth(AndroidUtilities.dp(260));
                         return new RecyclerListView.Holder(userCell);
                     case TYPE_HOLDER_REACTION:
                     case TYPE_HOLDER_SEEN:
-                        ReactionsListView.LoadingHolder cell = new ReactionsListView.LoadingHolder(parent.getContext());
+                        UserReactionsListView.LoadingHolder cell = new UserReactionsListView.LoadingHolder(parent.getContext());
                         cell.setLayoutParams(new RecyclerView.LayoutParams(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
                         cell.setMinimumWidth(AndroidUtilities.dp(260));
                         return new RecyclerListView.Holder(cell);
@@ -156,16 +156,16 @@ public class ReactionsListView extends LinearLayout {
 
             @Override
             public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-                if (holder.itemView instanceof ReactionsListView.LoadingHolder) {
-                    ReactionsListView.LoadingHolder cell = (ReactionsListView.LoadingHolder) holder.itemView;
+                if (holder.itemView instanceof UserReactionsListView.LoadingHolder) {
+                    UserReactionsListView.LoadingHolder cell = (UserReactionsListView.LoadingHolder) holder.itemView;
                     if (position >= totalReactions) {
                         cell.setHolder(FlickerLoadingView.REACTION_USERS_SEEN_TYPE);
                     } else {
                         cell.setHolder(FlickerLoadingView.REACTION_USERS_TYPE);
                     }
                     loadNext();
-                } else if (holder.itemView instanceof ReactionsListView.UserCell) {
-                    ReactionsListView.UserCell cell = (ReactionsListView.UserCell) holder.itemView;
+                } else if (holder.itemView instanceof UserReactionsListView.UserCell) {
+                    UserReactionsListView.UserCell cell = (UserReactionsListView.UserCell) holder.itemView;
                     UserInfoHolder infoHolder = allUsers.get(position);
                     if (infoHolder.hasReaction && infoHolder.reaction != null) {
                         TLRPC.TL_availableReaction tlAvailableReaction = MediaDataController.getInstance(currentAccount).getAvailableReactionByName(infoHolder.reaction);

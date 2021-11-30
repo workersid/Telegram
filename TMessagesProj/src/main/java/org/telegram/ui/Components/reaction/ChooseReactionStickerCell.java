@@ -25,7 +25,7 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.LayoutHelper;
 
-public class ReactionStickerCell extends FrameLayout {
+public class ChooseReactionStickerCell extends FrameLayout {
 
     private final BackupImageView imageView;
     private TLRPC.Document sticker;
@@ -39,7 +39,7 @@ public class ReactionStickerCell extends FrameLayout {
     private final ImageReceiver imageReceiverActivate = new ImageReceiver();
     private boolean isAnimationReady;
 
-    public ReactionStickerCell(Context context) {
+    public ChooseReactionStickerCell(Context context) {
         super(context);
         imageView = new BackupImageView(context);
         imageView.setAspectFit(true);

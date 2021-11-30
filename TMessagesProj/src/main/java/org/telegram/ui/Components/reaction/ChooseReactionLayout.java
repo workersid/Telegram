@@ -68,7 +68,7 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
         listView.setOnItemClickListener((view, position) -> {
             if (delegate != null) {
                 TLRPC.TL_availableReaction reaction = listViewAdapter.getItem(position);
-                if (reaction != null && ((ReactionStickerCell) view).isAnimationReady()) {
+                if (reaction != null && ((ChooseReactionStickerCell) view).isAnimationReady()) {
                     delegate.onItemClick(reaction);
                 }
             }

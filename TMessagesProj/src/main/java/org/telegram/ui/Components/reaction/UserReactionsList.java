@@ -9,7 +9,6 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -39,80 +38,44 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 @SuppressLint("ViewConstructor")
-public class UserReactionsListView extends LinearLayout {
-
+public class UserReactionsList extends FrameLayout {
     private static final String END_FLAG = "end";
+
+    interface Delegate {
+        void onItemClick(TLRPC.User user);
+    }
 
     private final ArrayList<UserInfoHolder> allUsers = new ArrayList<>();
     private final HashMap<Long, TLRPC.User> allUsersMap = new HashMap<>();
-    private final ArrayList<EmotionInfo> emotionInfoList = new ArrayList<>();
 
     private final int currentAccount = UserConfig.selectedAccount;
 
+    private final RecyclerListView.SelectionAdapter usersListAdapter;
+    private final LinearLayoutManager usersLayoutManager;
     private final RecyclerListView usersListView;
-    private final RecyclerListView tabsListView;
-    private LinearLayoutManager usersLayoutManager;
-    private LinearLayoutManager tabsLayoutManager;
-    private RecyclerListView.SelectionAdapter usersListAdapter;
-    private RecyclerListView.SelectionAdapter tabsListAdapter;
 
-    private int totalSeen;
-    private int totalReactions;
+    private String loadNextReactionsId;
+    private String loadNextSeenId;
     private boolean isLoading;
+
     private final boolean isOut;
     private final long chatId;
     private final long dialogId;
     private final int messageId;
+    private int totalSeen;//тут именно кол-во всех просмотренных, оно нужжно только на первой вкладке
+    private int totalReactions;//тут кол-во реакций в зависимости от переданного reaction
+    private final String currentReaction;
 
-    private String loadNextReactionsId;
-    private String loadNextSeenId;
-
-
-    public UserReactionsListView(Context context, MessageObject selectedObject, int totalSeen) {
+    public UserReactionsList(@NonNull Context context, MessageObject selectedObject, int seen, String reaction, final Delegate delegate) {
         super(context);
-        setOrientation(VERTICAL);
         chatId = selectedObject.getChatId();
         dialogId = selectedObject.getDialogId();
         messageId = selectedObject.getId();
         isOut = selectedObject.isOutOwner();
-
-        this.totalSeen = totalSeen;
-        totalReactions = EmotionUtils.extractTotalReactions(selectedObject);
-        emotionInfoList.addAll(EmotionUtils.extractEmotionInfoList(selectedObject, MediaDataController.getInstance(currentAccount)));
-
-        FrameLayout tabsContainer = new FrameLayout(getContext());
-        tabsListView = new RecyclerListView(getContext());
-        tabsListView.setLayoutManager(tabsLayoutManager = new LinearLayoutManager(getContext(), RecyclerView.HORIZONTAL, false));
-        tabsListView.setAdapter(new RecyclerListView.SelectionAdapter() {
-
-            @Override
-            public boolean isEnabled(RecyclerView.ViewHolder holder) {
-                return false;
-            }
-
-            @NonNull
-            @Override
-            public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-                EmotionCell cell = new EmotionCell(parent.getContext());
-                cell.setLayoutParams(new RecyclerView.LayoutParams(LayoutHelper.WRAP_CONTENT, AndroidUtilities.dp(48)));
-                return new RecyclerListView.Holder(cell);
-            }
-
-            @Override
-            public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-                if (holder.itemView instanceof EmotionCell) {
-                    EmotionCell cell = (EmotionCell) holder.itemView;
-                    cell.setEmotionInfo(emotionInfoList.get(position), false);
-                }
-            }
-
-            @Override
-            public int getItemCount() {
-                return emotionInfoList.size();
-            }
-        });
-        tabsContainer.addView(tabsListView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
-        addView(tabsContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48));
+        currentReaction = reaction;
+        totalSeen = currentReaction == null ? seen : 0;
+        totalReactions = EmotionUtils.extractTotalReactions(selectedObject, currentReaction);
+        loadNextSeenId = currentReaction != null ? END_FLAG : null;
 
         usersListView = new RecyclerListView(getContext());
         usersListView.setLayoutManager(usersLayoutManager = new LinearLayoutManager(getContext()));
@@ -136,8 +99,8 @@ public class UserReactionsListView extends LinearLayout {
 
             @Override
             public boolean isEnabled(RecyclerView.ViewHolder holder) {
-                if (holder.itemView instanceof UserReactionsListView.UserCell) {
-                    UserReactionsListView.UserCell cell = (UserReactionsListView.UserCell) holder.itemView;
+                if (holder.itemView instanceof UserCell) {
+                    UserCell cell = (UserCell) holder.itemView;
                     return cell.isEnabled();
                 }
                 return false;
@@ -148,13 +111,13 @@ public class UserReactionsListView extends LinearLayout {
             public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
                 switch (viewType) {
                     case TYPE_USER:
-                        UserReactionsListView.UserCell userCell = new UserReactionsListView.UserCell(parent.getContext());
+                        UserCell userCell = new UserCell(parent.getContext());
                         userCell.setLayoutParams(new RecyclerView.LayoutParams(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
                         userCell.setMinimumWidth(AndroidUtilities.dp(260));
                         return new RecyclerListView.Holder(userCell);
                     case TYPE_HOLDER_REACTION:
                     case TYPE_HOLDER_SEEN:
-                        UserReactionsListView.LoadingHolder cell = new UserReactionsListView.LoadingHolder(parent.getContext());
+                        LoadingHolder cell = new LoadingHolder(parent.getContext());
                         cell.setLayoutParams(new RecyclerView.LayoutParams(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
                         cell.setMinimumWidth(AndroidUtilities.dp(260));
                         return new RecyclerListView.Holder(cell);
@@ -164,16 +127,16 @@ public class UserReactionsListView extends LinearLayout {
 
             @Override
             public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-                if (holder.itemView instanceof UserReactionsListView.LoadingHolder) {
-                    UserReactionsListView.LoadingHolder cell = (UserReactionsListView.LoadingHolder) holder.itemView;
+                if (holder.itemView instanceof LoadingHolder) {
+                    LoadingHolder cell = (LoadingHolder) holder.itemView;
                     if (position >= totalReactions) {
                         cell.setHolder(FlickerLoadingView.REACTION_USERS_SEEN_TYPE);
                     } else {
                         cell.setHolder(FlickerLoadingView.REACTION_USERS_TYPE);
                     }
                     loadNext();
-                } else if (holder.itemView instanceof UserReactionsListView.UserCell) {
-                    UserReactionsListView.UserCell cell = (UserReactionsListView.UserCell) holder.itemView;
+                } else if (holder.itemView instanceof UserCell) {
+                    UserCell cell = (UserCell) holder.itemView;
                     UserInfoHolder infoHolder = allUsers.get(position);
                     if (infoHolder.hasReaction && infoHolder.reaction != null) {
                         TLRPC.TL_availableReaction tlAvailableReaction = MediaDataController.getInstance(currentAccount).getAvailableReactionByName(infoHolder.reaction);
@@ -200,19 +163,13 @@ public class UserReactionsListView extends LinearLayout {
                 return totalReactions + Math.max((totalSeen - totalReactions), 0);
             }
         });
+        usersListView.setOnItemClickListener((view, position) -> {
+            if (delegate != null) {
+                delegate.onItemClick(allUsers.get(position).user);
+            }
+        });
 
-        addView(usersListView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
-    }
-
-    @Override
-    protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
-        //todo подписка на ивенты
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
+        addView(usersListView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
     }
 
     public RecyclerListView getUsersListView() {
@@ -258,9 +215,14 @@ public class UserReactionsListView extends LinearLayout {
             isLoading = true;
             if (!END_FLAG.equals(loadNextReactionsId)) {
                 TLRPC.TL_messages_getMessageReactionsList req = new TLRPC.TL_messages_getMessageReactionsList();
-                req.limit = 100;
+                req.limit = currentReaction == null ? 100 : 50;
                 req.id = messageId;
+                req.reaction = currentReaction;
                 req.peer = MessagesController.getInstance(currentAccount).getInputPeer(dialogId/*chatId*/);
+
+                if (currentReaction != null) {
+                    req.flags |= 1;
+                }
 
                 if (loadNextReactionsId != null) {
                     req.flags |= 2;
@@ -386,7 +348,10 @@ public class UserReactionsListView extends LinearLayout {
                         finishLoading(true);
                     }
                 }));
+                return;
             }
+
+            finishLoading(true);
         }
     }
 

@@ -9,13 +9,21 @@ import java.util.HashMap;
 import java.util.List;
 
 public class EmotionUtils {
-    public static int extractTotalReactions(MessageObject selectedObject) {
+    public static int extractTotalReactions(MessageObject selectedObject, String reaction) {
         if (selectedObject.messageOwner.reactions != null && !selectedObject.messageOwner.reactions.results.isEmpty()) {
-            int counter = 0;
-            for (TLRPC.TL_reactionCount result : selectedObject.messageOwner.reactions.results) {
-                counter += result.count;
+            if (reaction == null) {
+                int counter = 0;
+                for (TLRPC.TL_reactionCount result : selectedObject.messageOwner.reactions.results) {
+                    counter += result.count;
+                }
+                return counter;
+            } else {
+                for (TLRPC.TL_reactionCount result : selectedObject.messageOwner.reactions.results) {
+                    if (result.reaction.equals(reaction)) {
+                        return result.count;
+                    }
+                }
             }
-            return counter;
         }
         return 0;
     }
@@ -27,7 +35,7 @@ public class EmotionUtils {
         EmotionInfo mainEmotionInfo = new EmotionInfo();
         mainEmotionInfo.dialogId = selectedObject.getDialogId();
         mainEmotionInfo.messageId = selectedObject.getId();
-        mainEmotionInfo.count = extractTotalReactions(selectedObject);
+        mainEmotionInfo.count = extractTotalReactions(selectedObject, null);
         emotionInfoList.add(mainEmotionInfo);
 
         if (selectedObject.messageOwner.reactions != null && !selectedObject.messageOwner.reactions.results.isEmpty()) {
@@ -41,6 +49,7 @@ public class EmotionUtils {
                 }
                 emotionInfo.count = result.count;
                 emotionInfo.isSelectedByCurrentUser = result.chosen;
+                emotionInfo.reaction = result.reaction;
                 emotionInfoList.add(emotionInfo);
                 emotionInfoMap.put(result.reaction, emotionInfo);
             }

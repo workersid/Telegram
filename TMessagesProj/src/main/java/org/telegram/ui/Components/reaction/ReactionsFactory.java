@@ -140,12 +140,20 @@ public class ReactionsFactory {
                     }
                 });
                 linearLayout.setOrientation(LinearLayout.VERTICAL);
-                UserReactionsListView listView = new UserReactionsListView(
+                UserReactionsListWithTabs listView = new UserReactionsListWithTabs(
                         delegate.getContext(),
                         selectedObject,
-                        menuReactionCounterView.getTotalSeen()
+                        menuReactionCounterView.getTotalSeen(),
+                        user -> {
+                            if (user == null) return;
+                            Bundle args = new Bundle();
+                            args.putLong("user_id", user.id);
+                            ProfileActivity fragment = new ProfileActivity(args);
+                            delegate.openFragment(fragment);
+                            delegate.dismissReactionsUsersPopupWindow();
+                        }
                 );
-                int listViewTotalHeight = AndroidUtilities.dp(8) + AndroidUtilities.dp(44) * listView.getUsersListView().getAdapter().getItemCount() + AndroidUtilities.dp(16) /*+ (добавить отступ для селекторов)*/;
+                int listViewTotalHeight = AndroidUtilities.dp(8) + AndroidUtilities.dp(44) * listView.getMainTabCount() + AndroidUtilities.dp(16) /*+ (добавить отступ для селекторов)*/;
 
                 backContainer.addView(cell);
                 linearLayout.addView(backContainer);
@@ -199,18 +207,6 @@ public class ReactionsFactory {
                     reactionsUsersPopupWindow.setEmptyOutAnimation(250);
                     backButtonPressed[0] = true;
                     reactionsUsersPopupWindow.dismiss(true);
-                });
-
-                listView.getUsersListView().setOnItemClickListener((view1, position) -> {
-                    TLRPC.User user = listView.getUserByPos(position);
-                    if (user == null) {
-                        return;
-                    }
-                    Bundle args = new Bundle();
-                    args.putLong("user_id", user.id);
-                    ProfileActivity fragment = new ProfileActivity(args);
-                    delegate.openFragment(fragment);
-                    reactionsUsersPopupWindow.dismiss();
                 });
             }
         });

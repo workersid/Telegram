@@ -24,6 +24,12 @@ public class EmotionUtils {
         List<EmotionInfo> emotionInfoList = new ArrayList<>();
         HashMap<String, EmotionInfo> emotionInfoMap = new HashMap<>();
 
+        EmotionInfo mainEmotionInfo = new EmotionInfo();
+        mainEmotionInfo.dialogId = selectedObject.getDialogId();
+        mainEmotionInfo.messageId = selectedObject.getId();
+        mainEmotionInfo.count = extractTotalReactions(selectedObject);
+        emotionInfoList.add(mainEmotionInfo);
+
         if (selectedObject.messageOwner.reactions != null && !selectedObject.messageOwner.reactions.results.isEmpty()) {
             for (TLRPC.TL_reactionCount result : selectedObject.messageOwner.reactions.results) {
                 EmotionInfo emotionInfo = new EmotionInfo();

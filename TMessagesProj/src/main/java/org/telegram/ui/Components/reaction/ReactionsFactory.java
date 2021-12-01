@@ -145,7 +145,7 @@ public class ReactionsFactory {
                         selectedObject,
                         menuReactionCounterView.getTotalSeen()
                 );
-                int listViewTotalHeight = AndroidUtilities.dp(8) + AndroidUtilities.dp(44) * listView.getUsersListView().getAdapter().getItemCount() + AndroidUtilities.dp(16);
+                int listViewTotalHeight = AndroidUtilities.dp(8) + AndroidUtilities.dp(44) * listView.getUsersListView().getAdapter().getItemCount() + AndroidUtilities.dp(16) /*+ (добавить отступ для селекторов)*/;
 
                 backContainer.addView(cell);
                 linearLayout.addView(backContainer);

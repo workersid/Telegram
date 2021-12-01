@@ -67,7 +67,7 @@ public class EmotionCell extends LinearLayout {
         numberTextView.setTextSize(18);
         numberTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
         numberTextView.setTextColor(Theme.getColor(Theme.key_actionBarActionModeDefaultIcon));
-        addView(numberTextView, LayoutHelper.createLinear(0, LayoutHelper.MATCH_PARENT, 1.0f, 65, 0, 0, 0));
+        addView(numberTextView, LayoutHelper.createLinear(30, LayoutHelper.MATCH_PARENT, 0, 0, 0, 0));
         numberTextView.setOnTouchListener((v, event) -> true);
 
         avatarsImageView = new AvatarsImageView(context, false);
@@ -91,7 +91,7 @@ public class EmotionCell extends LinearLayout {
 
         if (emotionInfo.staticIcon != null) {
             TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(emotionInfo.staticIcon.thumbs, 90);
-            imageView.setImage(ImageLocation.getForDocument(thumb, emotionInfo.staticIcon), "50_50", "webp", null, inputEmotionInfo);
+            imageView.setImage(ImageLocation.getForDocument(thumb, emotionInfo.staticIcon), "50_50", "webp", null, emotionInfo);
         } else {
             imageView.setImageResource(R.drawable.msg_reactions_filled);
         }
@@ -102,7 +102,7 @@ public class EmotionCell extends LinearLayout {
 
         boolean hasUnknownUsers = false;
 
-        if (emotionInfo.count <= 3 && userIds.size() > 0) {
+        if (emotionInfo.count <= 3 && userIds.size() > 0 && emotionInfo.count == userIds.size()) {
             List<TLRPC.User> users = new ArrayList<>(3);
 
             for (long userId : userIds) {
@@ -127,18 +127,20 @@ public class EmotionCell extends LinearLayout {
             } else {
                 avatarsImageView.setTranslationX(0);
             }
+            avatarsImageView.commitTransition(animated);
+            avatarsImageView.setCount(users.size());
         } else {
             for (int i = 0; i < 3; i++) {
                 avatarsImageView.setObject(i, currentAccount, null);
             }
             avatarsImageView.setTranslationX(0);
+            avatarsImageView.commitTransition(animated);
+            avatarsImageView.setCount(0);
         }
-
-        avatarsImageView.commitTransition(animated);
 
         if (hasUnknownUsers) {
             TLRPC.TL_messages_getMessageReactionsList req = new TLRPC.TL_messages_getMessageReactionsList();
-            req.limit = 100;
+            req.limit = 50;
             req.id = emotionInfo.messageId;
             req.peer = MessagesController.getInstance(currentAccount).getInputPeer(emotionInfo.dialogId);
 
@@ -181,7 +183,7 @@ public class EmotionCell extends LinearLayout {
             }
         });
         anim.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
-        anim.setDuration(150);
+        anim.setDuration(100);
         anim.start();
     }
 
@@ -189,7 +191,7 @@ public class EmotionCell extends LinearLayout {
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
         bgClipPath.reset();
-        bgRect.set(0, 0, w, h - AndroidUtilities.dp(18));
+        bgRect.set(0, 0, w, h);
         bgClipPath.addRoundRect(bgRect, roundBgRadius, roundBgRadius, Path.Direction.CW);
     }
 

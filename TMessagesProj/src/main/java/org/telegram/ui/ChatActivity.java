@@ -4477,6 +4477,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 );
                             }
                             canvas.translate(canvasOffsetX, canvasOffsetY);
+                            //todo onooo
                             cell.drawCaptionLayout(canvas, selectionOnly,  alpha);
                             canvas.restore();
                         }

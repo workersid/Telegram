@@ -2942,6 +2942,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 pollCheckBox[a].onDetachedFromWindow();
             }
         }
+        emotionsInChatMessage.onDetachedFromWindow();
         attachedToWindow = false;
         radialProgress.onDetachedFromWindow();
         videoRadialProgress.onDetachedFromWindow();
@@ -3013,6 +3014,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         checkBoxTranslation = 0;
         updateTranslation();
 
+        emotionsInChatMessage.onAttachedToWindow();
         radialProgress.onAttachedToWindow();
         videoRadialProgress.onAttachedToWindow();
         avatarImage.onAttachedToWindow();
@@ -3406,6 +3408,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 commentLayout = null;
                 drawCommentNumber = false;
             }
+
+            emotionsInChatMessage.setReactions(messageObject, groupedMessages);
 
             if (messageObject.type == 0) {
                 drawForwardedName = !isRepliesChat;
@@ -6020,11 +6024,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             if (needReactions && (currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0)) {
                 if (isReactionsInBalloon) {
                     //reactionHeight только для тех сообщений где расположение в сообщение
-                    reactionHeight = emotionsInChatMessage.getSpaceHeight() + AndroidUtilities.dp(16);
+                    reactionHeight = emotionsInChatMessage.getSpaceHeight(getBackgroundDrawableRight() - getBackgroundDrawableLeft()) + AndroidUtilities.dp(16);//отступ для времени
                     subtractReactionBackgroundHeight = 0;
                 } else {
                     reactionHeight = 0;
-                    subtractReactionBackgroundHeight = emotionsInChatMessage.getSpaceHeight();
+                    subtractReactionBackgroundHeight = emotionsInChatMessage.getSpaceHeight(getBackgroundDrawableRight() - getBackgroundDrawableLeft());
                 }
             } else {
                 reactionHeight = 0;
@@ -9770,8 +9774,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             viaString = AndroidUtilities.replaceTags(String.format(" %s <b>%s</b>", LocaleController.getString("ViaBot", R.string.ViaBot), viaUsername));
             viaWidth = (int) Math.ceil(Theme.chat_replyNamePaint.measureText(viaString, 0, viaString.length()));
         }
-        emotionsInChatMessage.setReactions(messageObject.messageOwner.reactions);
-        emotionsInChatMessage.calculateSpaceSize(getParentWidth());
 
         boolean needAuthorName = isNeedAuthorName();
         boolean viaBot = (messageObject.messageOwner.fwd_from == null || messageObject.type == 14) && viaUsername != null;

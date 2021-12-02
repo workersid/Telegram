@@ -211,6 +211,7 @@ class EmotionInfo {
     public boolean isSelectedByCurrentUser;
     public int count;
     public TLRPC.Document staticIcon;
+    public TLRPC.Document selectIcon;
     public String reaction;
     public int messageId;
     public long dialogId;

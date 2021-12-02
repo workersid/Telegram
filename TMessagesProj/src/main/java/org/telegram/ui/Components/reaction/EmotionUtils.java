@@ -28,15 +28,17 @@ public class EmotionUtils {
         return 0;
     }
 
-    public static List<EmotionInfo> extractEmotionInfoList(MessageObject selectedObject, MediaDataController mediaDataController) {
+    public static List<EmotionInfo> extractEmotionInfoList(MessageObject selectedObject, MediaDataController mediaDataController, boolean excludeMain) {
         List<EmotionInfo> emotionInfoList = new ArrayList<>();
         HashMap<String, EmotionInfo> emotionInfoMap = new HashMap<>();
 
-        EmotionInfo mainEmotionInfo = new EmotionInfo();
-        mainEmotionInfo.dialogId = selectedObject.getDialogId();
-        mainEmotionInfo.messageId = selectedObject.getId();
-        mainEmotionInfo.count = extractTotalReactions(selectedObject, null);
-        emotionInfoList.add(mainEmotionInfo);
+        if (!excludeMain) {
+            EmotionInfo mainEmotionInfo = new EmotionInfo();
+            mainEmotionInfo.dialogId = selectedObject.getDialogId();
+            mainEmotionInfo.messageId = selectedObject.getId();
+            mainEmotionInfo.count = extractTotalReactions(selectedObject, null);
+            emotionInfoList.add(mainEmotionInfo);
+        }
 
         if (selectedObject.messageOwner.reactions != null && !selectedObject.messageOwner.reactions.results.isEmpty()) {
             for (TLRPC.TL_reactionCount result : selectedObject.messageOwner.reactions.results) {
@@ -46,6 +48,7 @@ public class EmotionUtils {
                 TLRPC.TL_availableReaction tlAvailableReaction = mediaDataController.getAvailableReactionByName(result.reaction);
                 if (tlAvailableReaction != null) {
                     emotionInfo.staticIcon = tlAvailableReaction.static_icon;
+                    emotionInfo.selectIcon = tlAvailableReaction.select_animation;
                 }
                 emotionInfo.count = result.count;
                 emotionInfo.isSelectedByCurrentUser = result.chosen;

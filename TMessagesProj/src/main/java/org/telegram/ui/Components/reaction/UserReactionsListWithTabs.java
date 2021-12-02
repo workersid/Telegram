@@ -51,7 +51,7 @@ public class UserReactionsListWithTabs extends LinearLayout {
 
         totalSeen = seen;
         totalReactions = EmotionUtils.extractTotalReactions(selectedObject, null);
-        emotionTabList.addAll(EmotionUtils.extractEmotionInfoList(selectedObject, MediaDataController.getInstance(currentAccount)));
+        emotionTabList.addAll(EmotionUtils.extractEmotionInfoList(selectedObject, MediaDataController.getInstance(currentAccount), false));
 
         viewPager = new ViewPager(context);
         viewPager.setAdapter(new PagerAdapter() {

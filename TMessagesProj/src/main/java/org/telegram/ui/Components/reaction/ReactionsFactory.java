@@ -96,10 +96,7 @@ public class ReactionsFactory {
                 cell.setTextAndIcon(LocaleController.getString("Back", R.string.Back), R.drawable.msg_arrow_back);
                 cell.getTextView().setPadding(LocaleController.isRTL ? 0 : AndroidUtilities.dp(40), 0, LocaleController.isRTL ? AndroidUtilities.dp(40) : 0, 0);
 
-                Drawable shadowDrawable2 = ContextCompat.getDrawable(delegate.getContext(), R.drawable.popup_fixed_alert).mutate();
-                shadowDrawable2.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground), PorterDuff.Mode.MULTIPLY));
                 FrameLayout backContainer = new FrameLayout(delegate.getContext());
-                backContainer.setBackground(shadowDrawable2);
 
                 LinearLayout linearLayout = new LinearLayout(delegate.getContext()) {
                     @Override
@@ -117,6 +114,11 @@ public class ReactionsFactory {
                         return super.dispatchKeyEvent(event);
                     }
                 };
+
+                Drawable shadowDrawable2 = ContextCompat.getDrawable(delegate.getContext(), R.drawable.popup_fixed_alert).mutate();
+                shadowDrawable2.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground), PorterDuff.Mode.MULTIPLY));
+                linearLayout.setBackground(shadowDrawable2);
+
                 linearLayout.setOnTouchListener(new View.OnTouchListener() {
 
                     private final int[] pos = new int[2];
@@ -165,9 +167,9 @@ public class ReactionsFactory {
                     listView.getLayoutParams().height = listViewTotalHeight;
                 }
 
-                Drawable shadowDrawable3 = ContextCompat.getDrawable(delegate.getContext(), R.drawable.popup_fixed_alert).mutate();
+                /*Drawable shadowDrawable3 = ContextCompat.getDrawable(delegate.getContext(), R.drawable.popup_fixed_alert).mutate();
                 shadowDrawable3.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground), PorterDuff.Mode.MULTIPLY));
-                listView.setBackground(shadowDrawable3);
+                listView.setBackground(shadowDrawable3);*/
                 boolean[] backButtonPressed = new boolean[1];
 
                 final ActionBarPopupWindow reactionsUsersPopupWindow = new ActionBarPopupWindow(linearLayout, LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT) {

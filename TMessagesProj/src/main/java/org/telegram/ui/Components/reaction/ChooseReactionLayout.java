@@ -30,6 +30,7 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
     private RecyclerListView listView;
     private ChooseReactionAdapter listViewAdapter;
     private final int currentAccount = UserConfig.selectedAccount;
+    private final Paint bgPaintWithShadow = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF bgRect = new RectF();
     private final Path bgClipPath = new Path();
@@ -57,6 +58,8 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
 
     private void init(Context context) {
         bgPaint.setColor(Color.WHITE);
+        bgPaintWithShadow.setColor(Color.WHITE);
+        bgPaintWithShadow.setShadowLayer(AndroidUtilities.dp(1), 0.0f, 0.0f, Color.GRAY);
         setWillNotDraw(false);
         listView = new RecyclerListView(context);
         listView.setVisibility(GONE);
@@ -112,9 +115,9 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
 
     @Override
     protected void onDraw(Canvas canvas) {
-        canvas.drawRoundRect(bgRect, roundBgRadius, roundBgRadius, bgPaint);
         canvas.drawCircle(getMeasuredWidth() - AndroidUtilities.dp(20), getMeasuredHeight() - AndroidUtilities.dp(4), AndroidUtilities.dp(4), bgPaint);
         canvas.drawCircle(getMeasuredWidth() - AndroidUtilities.dp(28), getMeasuredHeight() - AndroidUtilities.dp(20), AndroidUtilities.dp(8), bgPaint);
+        canvas.drawRoundRect(bgRect, roundBgRadius, roundBgRadius, bgPaint);
         canvas.clipPath(bgClipPath);
         super.onDraw(canvas);
     }

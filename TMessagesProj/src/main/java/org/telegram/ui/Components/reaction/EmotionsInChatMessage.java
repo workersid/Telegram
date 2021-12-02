@@ -88,13 +88,13 @@ public class EmotionsInChatMessage {
                 if (object.hasReactions()) {
                     this.messageObject = object;
                     this.reactions = object.messageOwner.reactions;
-                    prepare();
+                    bind();
                     return;
                 }
             } else {
                 this.messageObject = messageObject;
                 this.reactions = messageObject.messageOwner.reactions;
-                prepare();
+                bind();
                 return;
             }
         }
@@ -104,7 +104,7 @@ public class EmotionsInChatMessage {
         this.emotionInfoList.clear();
     }
 
-    private void prepare() {
+    private void bind() {
         emotionInfoList.clear();
         emotionInfoList.addAll(EmotionUtils.extractEmotionInfoList(messageObject, MediaDataController.getInstance(currentAccount), true));
 
@@ -178,10 +178,6 @@ public class EmotionsInChatMessage {
             }
         }
         return totalHeight = 0;
-    }
-
-    public void onLayout(int width, int height) {
-
     }
 
     public void onDraw(Canvas canvas, int startX, int startY, int availableWidth) {
@@ -266,10 +262,6 @@ public class EmotionsInChatMessage {
         return size;
     }
 
-    public boolean onTouchDown() {
-        return true;
-    }
-
     public void onAttachedToWindow() {
         for (ImageReceiver avatarImage : avatarImages) {
             avatarImage.onAttachedToWindow();
@@ -286,5 +278,13 @@ public class EmotionsInChatMessage {
         for (ImageReceiver iconImage : iconImages) {
             iconImage.onDetachedFromWindow();
         }
+    }
+
+    public boolean onTouchDown() {
+        return true;
+    }
+
+    public void onLayout(int width, int height) {
+
     }
 }

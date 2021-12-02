@@ -2856,6 +2856,18 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 cell.setInvalidatesParent(true);
                 if (type == 0) {
                     cell.drawTime(canvas, alpha, true);
+                    if (cell.getCurrentMessagesGroup() != null) {
+                        for (int ii = 0; ii < chatListView.getChildCount(); ii++) {
+                            View child2 = chatListView.getChildAt(ii);
+                            if (child2 instanceof ChatMessageCell && ((ChatMessageCell) child2).getCurrentMessagesGroup() == cell.getCurrentMessagesGroup()) {
+                                ChatMessageCell cell2 = ((ChatMessageCell) child2);
+                                if ((cell2.getCurrentPosition().flags & MessageObject.POSITION_FLAG_LEFT) != 0 && cell2.getCurrentPosition().minX == 0 && cell2.getCurrentPosition().maxX == 0) {
+                                    cell.drawEmotionsLayout(canvas, cell2.getBackgroundDrawableLeft());
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 } else if (type == 1) {
                     cell.drawNamesLayout(canvas, alpha);
                 } else {

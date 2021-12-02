@@ -3620,6 +3620,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             private final ArrayList<ChatMessageCell> drawTimeAfter = new ArrayList<>();
             private final ArrayList<ChatMessageCell> drawNamesAfter = new ArrayList<>();
             private final ArrayList<ChatMessageCell> drawCaptionAfter = new ArrayList<>();
+            private final ArrayList<ChatMessageCell> drawEmotionsAfter = new ArrayList<>();
             private final ArrayList<MessageObject.GroupedMessages> drawingGroups = new ArrayList<>(10);
 
             private boolean slideAnimationInProgress;
@@ -4426,6 +4427,20 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             canvas.save();
                             canvas.translate(cell.getLeft() + cell.getNonAnimationTranslationX(false), cell.getY());
                             cell.drawTime(canvas, cell.shouldDrawAlphaLayer() ? cell.getAlpha() : 1f, true);
+
+                            if (cell.getCurrentMessagesGroup() != null) {
+                                for (int ii = 0; ii < count; ii++) {
+                                    View child2 = chatListView.getChildAt(ii);
+                                    if (child2 instanceof ChatMessageCell && ((ChatMessageCell) child2).getCurrentMessagesGroup() == cell.getCurrentMessagesGroup()) {
+                                        ChatMessageCell cell2 = ((ChatMessageCell) child2);
+                                        if ((cell2.getCurrentPosition().flags & MessageObject.POSITION_FLAG_LEFT) != 0 && cell2.getCurrentPosition().minX == 0 && cell2.getCurrentPosition().maxX == 0) {
+                                            cell.drawEmotionsLayout(canvas, cell2.getBackgroundDrawableLeft());
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
                             canvas.restore();
                         }
                         drawTimeAfter.clear();
@@ -4477,7 +4492,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 );
                             }
                             canvas.translate(canvasOffsetX, canvasOffsetY);
-                            //todo onooo
                             cell.drawCaptionLayout(canvas, selectionOnly,  alpha);
                             canvas.restore();
                         }
@@ -4505,7 +4519,20 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 cell.setInvalidatesParent(true);
                                 if (position == null || position.last) {
                                     chatMessageCell.drawTime(canvas, alpha, true);
+                                    if (chatMessageCell.getCurrentMessagesGroup() != null) {
+                                        for (int ii = 0; ii < count; ii++) {
+                                            View child2 = chatListView.getChildAt(ii);
+                                            if (child2 instanceof ChatMessageCell && ((ChatMessageCell) child2).getCurrentMessagesGroup() == chatMessageCell.getCurrentMessagesGroup()) {
+                                                ChatMessageCell cell2 = ((ChatMessageCell) child2);
+                                                if ((cell2.getCurrentPosition().flags & MessageObject.POSITION_FLAG_LEFT) != 0 && cell2.getCurrentPosition().minX == 0 && cell2.getCurrentPosition().maxX == 0) {
+                                                    chatMessageCell.drawEmotionsLayout(canvas, cell2.getBackgroundDrawableLeft());
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
+
                                 if (position == null || (position.minX == 0 && position.minY == 0)) {
                                     chatMessageCell.drawNamesLayout(canvas, alpha);
                                 }
@@ -4520,6 +4547,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 }
                             }
                         }
+
                         if (position != null || chatMessageCell.getTransitionParams().transformGroupToSingleMessage) {
                             if (num == count - 1) {
                                 float alpha = chatMessageCell.shouldDrawAlphaLayer() ? chatMessageCell.getAlpha() : 1f;

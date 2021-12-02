@@ -50,17 +50,17 @@ public class EmotionsInChatMessage {
 
     //3
     public void calculateSpaceSize(int parentMaxWidth) {
-
+        //если место мало и сообщение является текстом, то расширям чтобы влезла одна эмоция
     }
 
     //3
-    public int getSpaceWidth() {
-        return 0;
+    public int getMinimumSpaceWidth() {
+        return 0;//AndroidUtilities.dp(120);
     }
 
     //4
     public int getSpaceHeight() {
-        return AndroidUtilities.dp(48);
+        return 0;//AndroidUtilities.dp(48);
     }
 
     //5
@@ -76,12 +76,12 @@ public class EmotionsInChatMessage {
     }
 
     //6
-    public void onDraw(Canvas canvas, int startX, int startY) {
+    public void onDraw(Canvas canvas, int startX, int startY, int width) {
         //Log.e("cc","v=" + startX+ "=" + startY);
 
        canvas.save();
         canvas.translate(startX, startY);
-        canvas.drawRect(0,0,20,20,paint);
+        canvas.drawRect(0,0,width,getSpaceHeight(),paint);
         canvas.restore();
         /*if (commentAvatarImages != null) {
             int toAdd = AndroidUtilities.dp(17);

@@ -5,7 +5,10 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.view.MotionEvent;
 import android.view.View;
+
+import com.google.android.exoplayer2.util.Log;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DocumentObject;
@@ -21,6 +24,7 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AnimatedNumberLayout;
 import org.telegram.ui.Components.AvatarDrawable;
+import org.telegram.ui.MediaCalendarActivity;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,6 +54,7 @@ public class EmotionsInChatMessage {
     private final int oneItemMarginRight = AndroidUtilities.dp(4);
     private final int oneItemMaxWidth = AndroidUtilities.dp(92);
     private final RectF rectF = new RectF();
+    private boolean pressed;
 
     public void createForView(View parentView) {
         if (!isInitialized) {
@@ -198,7 +203,8 @@ public class EmotionsInChatMessage {
                 //рисуем аватары
 
                 int itemWidth = measureWidth(emotionInfo, i);
-                rectF.set(startX, startY + (oneRowMarginVertical / 2), startX + itemWidth, startY + oneRowHeight + (oneRowMarginVertical / 2));
+                rectF.set(offsetX, offsetY + (oneRowMarginVertical / 2), offsetX + itemWidth, offsetY + oneRowHeight + (oneRowMarginVertical / 2));
+                emotionInfo.drawRegion.set(rectF);
                 canvas.drawRoundRect(rectF, AndroidUtilities.dp(18), AndroidUtilities.dp(18), paint);
 
                 offsetX += AndroidUtilities.dp(8);
@@ -280,8 +286,33 @@ public class EmotionsInChatMessage {
         }
     }
 
-    public boolean onTouchDown() {
-        return true;
+    private float pressedX;
+    private float pressedY;
+
+    public boolean checkEmotionsButtonMotionEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            pressedX = event.getX();
+            pressedY = event.getY();
+            for (int i = 0; i < emotionInfoList.size(); i++) {
+                EmotionInfo emotionInfo = emotionInfoList.get(i);
+                if (emotionInfo.drawRegion.contains(pressedX, pressedY)) {
+                    pressed = true;
+                }
+            }
+        } else if (event.getAction() == MotionEvent.ACTION_UP) {
+            if (pressed) {
+                for (int i = 0; i < emotionInfoList.size(); i++) {
+                    EmotionInfo emotionInfo = emotionInfoList.get(i);
+                    if (emotionInfo.drawRegion.contains(pressedX, pressedY)) {
+                        //todo клик
+                    }
+                }
+            }
+            pressed = false;
+        } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
+            pressed = false;
+        }
+        return pressed;
     }
 
     public void onLayout(int width, int height) {

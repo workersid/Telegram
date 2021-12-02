@@ -543,6 +543,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     private boolean clearingHistory;
     private Handler checkReactionsHandler;
+    private Handler doubleClickHandler;
 
     public boolean openAnimationEnded;
     private boolean fragmentOpened;
@@ -1289,21 +1290,48 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     }
 
     RecyclerListView.OnItemClickListenerExtended onItemClickListener = new RecyclerListView.OnItemClickListenerExtended() {
+
+        private Runnable itemClickRunnable;
+
         @Override
-        public void onItemClick(View view, int position, float x, float y) {
+        public void onItemClick(final View viewItem, final int position, final float xView, final float yView) {
             wasManualScroll = true;
             if (actionBar.isActionModeShowed() || reportType >= 0) {
                 boolean outside = false;
-                if (view instanceof ChatMessageCell) {
-                    if (textSelectionHelper.isSelected(((ChatMessageCell) view).getMessageObject())) {
+                if (viewItem instanceof ChatMessageCell) {
+                    if (textSelectionHelper.isSelected(((ChatMessageCell) viewItem).getMessageObject())) {
                         return;
                     }
-                    outside = !((ChatMessageCell) view).isInsideBackground(x, y);
+                    outside = !((ChatMessageCell) viewItem).isInsideBackground(xView, yView);
                 }
-                processRowSelect(view, outside, x, y);
+                processRowSelect(viewItem, outside, xView, yView);
                 return;
             }
-            createMenu(view, true, false, x, y);
+            if (viewItem instanceof ChatMessageCell) {
+                if (((ChatMessageCell) viewItem).getMessageObject().isSponsored()) {
+                    createMenu(viewItem, true, false, xView, yView);
+                    return;
+                }
+            }
+            if (chatMode == MODE_SCHEDULED || viewItem instanceof ChatActionCell) {
+                createMenu(viewItem, true, false, xView, yView);
+                return;
+            }
+
+            if (itemClickRunnable != null) {
+                //двойной клик
+                doubleClickHandler.removeCallbacks(itemClickRunnable);
+                itemClickRunnable = null;
+                //спонсор, системное, отложенное их не касается
+                if (viewItem instanceof ChatMessageCell) {
+                    getSendMessagesHelper().sendReactionNew(((ChatMessageCell) viewItem).getMessageObject(), null);
+                }
+            } else {
+                doubleClickHandler.postDelayed(itemClickRunnable = () -> {
+                    itemClickRunnable = null;
+                    createMenu(viewItem, true, false, xView, yView);
+                }, 301);
+            }
         }
     };
 
@@ -1356,6 +1384,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     @Override
     public boolean onFragmentCreate() {
+        doubleClickHandler = new Handler(Looper.getMainLooper());
         checkReactionsHandler = new Handler(Looper.getMainLooper());
         final long chatId = arguments.getLong("chat_id", 0);
         final long userId = arguments.getLong("user_id", 0);
@@ -18973,6 +19002,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     @Override
     public void onPause() {
         super.onPause();
+        doubleClickHandler.removeCallbacksAndMessages(null);
         checkReactionsHandler.removeCallbacksAndMessages(null);
         if (scrimPopupWindow != null) {
             scrimPopupWindow.setPauseNotifications(false);

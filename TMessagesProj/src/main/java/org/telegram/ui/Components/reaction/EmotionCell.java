@@ -215,4 +215,5 @@ class EmotionInfo {
     public String reaction;
     public int messageId;
     public long dialogId;
+    public RectF drawRegion = new RectF();
 }

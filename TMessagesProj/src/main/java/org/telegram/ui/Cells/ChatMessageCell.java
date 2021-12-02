@@ -2126,6 +2126,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (!result) {
             result = checkPollButtonMotionEvent(event);
         }
+        if (!result) {
+            result = emotionsInChatMessage.checkEmotionsButtonMotionEvent(event);
+        }
 
         if (event.getAction() == MotionEvent.ACTION_CANCEL) {
             buttonPressed = 0;
@@ -11601,6 +11604,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             startEmotionsY = ((int) drawTimeY) + (timeLayout.getHeight()) + AndroidUtilities.dp(12);
             startEmotionsX += AndroidUtilities.dp(4);
             width -= AndroidUtilities.dp(4);
+            if (commentLayout != null) {
+                startEmotionsY += commentButtonRect.height();
+            }
         } else {
             startEmotionsY = ((int) drawTimeY) + (timeLayout.getHeight()) - reactionHeight;
             startEmotionsX += AndroidUtilities.dp(10);

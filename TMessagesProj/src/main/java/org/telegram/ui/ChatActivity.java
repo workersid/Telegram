@@ -47,6 +47,8 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.os.Vibrator;
 import android.provider.MediaStore;
@@ -540,6 +542,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private Runnable chatInviteRunnable;
 
     private boolean clearingHistory;
+    private Handler checkReactionsHandler;
 
     public boolean openAnimationEnded;
     private boolean fragmentOpened;
@@ -1330,8 +1333,30 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         super(args);
     }
 
+    private Runnable checkReactionsRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (chatListView != null) {
+                ArrayList<MessageObject> objects = new ArrayList<>();
+                int count = chatListView.getChildCount();
+                for (int ii = 0; ii < count; ii++) {
+                    View child2 = chatListView.getChildAt(ii);
+                    if (child2 instanceof ChatMessageCell) {
+                        ChatMessageCell cell2 = ((ChatMessageCell) child2);
+                        if (cell2.getMessageObject() != null && cell2.getMessageObject().hasReactions()) {
+                            objects.add(cell2.getMessageObject());
+                        }
+                    }
+                }
+                getMessagesController().updateReactionsNow(objects);
+            }
+            checkReactionsHandler.postDelayed(() -> checkReactionsRunnable.run(), 15001);
+        }
+    };
+
     @Override
     public boolean onFragmentCreate() {
+        checkReactionsHandler = new Handler(Looper.getMainLooper());
         final long chatId = arguments.getLong("chat_id", 0);
         final long userId = arguments.getLong("user_id", 0);
         final int encId = arguments.getInt("enc_id", 0);
@@ -18912,6 +18937,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             pullingDownOffset = 0;
             chatListView.invalidate();
         }
+
+        checkReactionsHandler.postDelayed(() -> checkReactionsRunnable.run(), 1000);
     }
 
     public void checkAdjustResize() {
@@ -18934,6 +18961,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     @Override
     public void onPause() {
         super.onPause();
+        checkReactionsHandler.removeCallbacksAndMessages(null);
         if (scrimPopupWindow != null) {
             scrimPopupWindow.setPauseNotifications(false);
             scrimPopupWindow.dismiss();

@@ -8467,6 +8467,24 @@ public class MessagesController extends BaseController implements NotificationCe
         });
     }
 
+    public void updateReactionsNow(ArrayList<MessageObject> visibleObjects) {
+        if (visibleObjects == null || visibleObjects.isEmpty()) return;
+        ArrayList<Integer> ids = new ArrayList<>();
+        for (MessageObject object : visibleObjects) {
+            ids.add(object.getId());
+        }
+
+        TLRPC.TL_messages_getMessagesReactions req = new TLRPC.TL_messages_getMessagesReactions();
+        req.peer = getInputPeer(visibleObjects.get(0).getDialogId());
+        req.id = ids;
+        getConnectionsManager().sendRequest(req, (response, error) -> {
+            if (error == null) {
+                TLRPC.Updates updates = (TLRPC.Updates) response;
+                processUpdates(updates, false);
+            }
+        });
+    }
+
     public void addToPollsQueue(long dialogId, ArrayList<MessageObject> visibleObjects) {
         SparseArray<MessageObject> array = pollsToCheck.get(dialogId);
         if (array == null) {

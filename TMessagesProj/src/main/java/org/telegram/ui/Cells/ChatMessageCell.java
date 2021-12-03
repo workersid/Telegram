@@ -6041,7 +6041,14 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             if (needReactions && (currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0)) {
                 if (isReactionsInBalloon) {
                     //reactionHeight только для тех сообщений где расположение в сообщение
-                    reactionHeight = emotionsInChatMessage.getSpaceHeight(getBackgroundDrawableRight() - getBackgroundDrawableLeft()) + AndroidUtilities.dp(16);//отступ для времени
+                    int tmp = emotionsInChatMessage.getSpaceHeight(getBackgroundDrawableRight() - getBackgroundDrawableLeft());
+
+                    if (tmp != 0) {
+                        reactionHeight = tmp + AndroidUtilities.dp(16);//отступ для времени
+                    } else {
+                        reactionHeight = 0;
+                    }
+
                     subtractReactionBackgroundHeight = 0;
                 } else {
                     emotionsInChatMessage.setButtonStyleTransparent();
@@ -7701,7 +7708,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             canvas.translate(timeAudioX + songX, AndroidUtilities.dp(13) + namesOffset + mediaOffsetY);
             songLayout.draw(canvas);
             canvas.restore();
-            
+
             boolean showSeekbar = MediaController.getInstance().isPlayingMessage(currentMessageObject);
             if (showSeekbar && toSeekBarProgress != 1f) {
                 toSeekBarProgress += 16f / 100f;
@@ -11611,53 +11618,59 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     }
 
     public void drawEmotionsLayout(Canvas canvas) {
-        int startEmotionsX = getBackgroundDrawableLeft();
-        int startEmotionsY;
-
-        int width = getBackgroundDrawableRight();
-        if (subtractReactionBackgroundHeight != 0) {
-            startEmotionsY = ((int) drawTimeY) + (timeLayout.getHeight()) + AndroidUtilities.dp(12);
-            startEmotionsX += AndroidUtilities.dp(4);
-            width -= AndroidUtilities.dp(4);
-            if (commentLayout != null) {
-                startEmotionsY += commentButtonRect.height();
-            }
+        if (subtractReactionBackgroundHeight == 0 && reactionHeight == 0) {
+            emotionsInChatMessage.onDraw(canvas, (int) (drawTimeX - AndroidUtilities.dp(32)), (int) drawTimeY, AndroidUtilities.dp(32));
         } else {
-            startEmotionsY = ((int) drawTimeY) + (timeLayout.getHeight()) - reactionHeight;
-            startEmotionsX += AndroidUtilities.dp(10);
-            width -= AndroidUtilities.dp(18);
-        }
-        width -= startEmotionsX;
+            int startEmotionsX = getBackgroundDrawableLeft();
+            int startEmotionsY;
 
-        emotionsInChatMessage.onDraw(canvas, startEmotionsX, startEmotionsY, width);
+            int width = getBackgroundDrawableRight();
+            if (subtractReactionBackgroundHeight != 0) {
+                startEmotionsY = ((int) drawTimeY) + (timeLayout.getHeight()) + AndroidUtilities.dp(12);
+                startEmotionsX += AndroidUtilities.dp(4);
+                width -= AndroidUtilities.dp(4);
+                if (commentLayout != null) {
+                    startEmotionsY += commentButtonRect.height();
+                }
+            } else {
+                startEmotionsY = ((int) drawTimeY) + (timeLayout.getHeight()) - reactionHeight;
+                startEmotionsX += AndroidUtilities.dp(10);
+                width -= AndroidUtilities.dp(18);
+            }
+            width -= startEmotionsX;
+
+            emotionsInChatMessage.onDraw(canvas, startEmotionsX, startEmotionsY, width);
+        }
     }
 
     public void drawEmotionsLayout(Canvas canvas, float startEmotionsX) {
-        int startEmotionsY;
-        if (subtractReactionBackgroundHeight != 0) {
-            startEmotionsY = ((int) drawTimeY) + (timeLayout.getHeight()) + AndroidUtilities.dp(12);
-            if (commentLayout != null) {
-                startEmotionsY += commentButtonRect.height();
-            }
+        if (subtractReactionBackgroundHeight == 0 && reactionHeight == 0) {
+            emotionsInChatMessage.onDraw(canvas, (int) (drawTimeX - AndroidUtilities.dp(32)), (int) drawTimeY, AndroidUtilities.dp(32));
         } else {
-            startEmotionsY = ((int) drawTimeY) + (timeLayout.getHeight()) - reactionHeight;
-        }
-
-        /*if (currentMessageObject.type == MessageObject.TYPE_PHOTO || documentAttachType == DOCUMENT_ATTACH_TYPE_VIDEO || currentMessageObject.type == 8)*/
-
-        //верхнее изображение на две клетки
-        if (canvas.getClipBounds().left < 0) {
-            if (captionLayout != null) {
-                emotionsInChatMessage.onDraw(canvas, (int) captionX, startEmotionsY, captionWidth);
+            int startEmotionsY;
+            if (subtractReactionBackgroundHeight != 0) {
+                startEmotionsY = ((int) drawTimeY) + (timeLayout.getHeight()) + AndroidUtilities.dp(12);
+                if (commentLayout != null) {
+                    startEmotionsY += commentButtonRect.height();
+                }
             } else {
-                emotionsInChatMessage.onDraw(canvas, captionOffsetX, startEmotionsY, getBackgroundDrawableRight() - captionOffsetX - AndroidUtilities.dp(4));
+                startEmotionsY = ((int) drawTimeY) + (timeLayout.getHeight()) - reactionHeight;
             }
-        } else {
-            if (captionLayout != null) {
-                emotionsInChatMessage.onDraw(canvas, (int) captionX, startEmotionsY, captionWidth);
+
+            //верхнее изображение на две клетки
+            if (canvas.getClipBounds().left < 0) {
+                if (captionLayout != null) {
+                    emotionsInChatMessage.onDraw(canvas, (int) captionX, startEmotionsY, captionWidth);
+                } else {
+                    emotionsInChatMessage.onDraw(canvas, captionOffsetX, startEmotionsY, getBackgroundDrawableRight() - captionOffsetX - AndroidUtilities.dp(4));
+                }
             } else {
-                startEmotionsX += AndroidUtilities.dp(4);
-                emotionsInChatMessage.onDraw(canvas, (int) startEmotionsX, startEmotionsY, (int) (getBackgroundDrawableRight() - startEmotionsX - AndroidUtilities.dp(4)));
+                if (captionLayout != null) {
+                    emotionsInChatMessage.onDraw(canvas, (int) captionX, startEmotionsY, captionWidth);
+                } else {
+                    startEmotionsX += AndroidUtilities.dp(4);
+                    emotionsInChatMessage.onDraw(canvas, (int) startEmotionsX, startEmotionsY, (int) (getBackgroundDrawableRight() - startEmotionsX - AndroidUtilities.dp(4)));
+                }
             }
         }
     }
@@ -15195,7 +15208,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         Paint paint = resourcesProvider != null ? resourcesProvider.getPaint(paintKey) : null;
         return paint != null ? paint : Theme.getThemePaint(paintKey);
     }
-    
+
     private boolean hasGradientService() {
         return resourcesProvider != null ? resourcesProvider.hasGradientService() : Theme.hasGradientService();
     }

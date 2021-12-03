@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.DocumentObject;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.ImageLocation;
@@ -72,6 +73,7 @@ public class EmotionsInChatMessage {
     private OnItemClick onItemClick;
     private Handler handler;
     private int buttonStyle = STYLE_BLUE;
+    private final int iconSizeMini = AndroidUtilities.dp(14);
 
     public void createForView(View parentView) {
         if (!isInitialized) {
@@ -226,6 +228,9 @@ public class EmotionsInChatMessage {
 
     public int getMinimumSpaceWidth() {
         if (reactions != null) {
+            if (messageObject != null && DialogObject.isUserDialog(messageObject.getDialogId())) {
+                return totalHeight = AndroidUtilities.dp(116);
+            }
             return oneItemMaxWidth + oneItemMarginHorizontal;
         }
         return 0;
@@ -234,6 +239,9 @@ public class EmotionsInChatMessage {
     public int getSpaceHeight(int width) {
         //максимум две строчки
         if (reactions != null) {
+            if (messageObject != null && DialogObject.isUserDialog(messageObject.getDialogId())) {
+                return totalHeight = 0;
+            }
             int count = emotionInfoList.size();
             if (count > 0) {
                 int maxCountInRow = width / (oneItemMaxWidth + oneItemMarginHorizontal);
@@ -245,6 +253,7 @@ public class EmotionsInChatMessage {
                 return totalHeight;
             }
         }
+
         return totalHeight = 0;
     }
 
@@ -252,7 +261,19 @@ public class EmotionsInChatMessage {
     private final Path pathHalfCircle = new Path();
 
     public void onDraw(Canvas canvas, int startX, int startY, int availableWidth) {
-        if (totalHeight == 0 || reactions == null) {
+        if (reactions == null) return;
+        if (totalHeight == 0) {
+            for (int i = 0; i < emotionInfoList.size(); i++) {
+                if (i >= 2) break;
+                if (emotionInfoList.size() == 1) {
+                    //если одна реакция, то она должна быть ближе к часам
+                    startX += AndroidUtilities.dp(16);
+                }
+                iconImages[i].setImageCoords(0, 0, iconSizeMini, iconSizeMini);
+                iconImages[i].setImageX(startX + (i * AndroidUtilities.dp(16)));
+                iconImages[i].setImageY(startY);
+                iconImages[i].draw(canvas);
+            }
             return;
         }
 

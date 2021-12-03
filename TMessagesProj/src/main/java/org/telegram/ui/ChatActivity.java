@@ -19007,7 +19007,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         doubleClickHandler.removeCallbacksAndMessages(null);
         checkReactionsHandler.removeCallbacksAndMessages(null);
 
-        if(reactionsUsersForSingleReactionPopupWindow!=null) {
+        if (reactionsUsersForSingleReactionPopupWindow != null) {
             reactionsUsersForSingleReactionPopupWindow.dismiss();
         }
 
@@ -19384,6 +19384,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (scrimPopupWindow != null) {
             scrimPopupWindow.dismiss();
             scrimView = null;
+        }
+        if (reactionsUsersForSingleReactionPopupWindow != null) {
+            reactionsUsersForSingleReactionPopupWindow.dismiss();
         }
 
         if (!AndroidUtilities.isTablet()) {

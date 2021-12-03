@@ -136,6 +136,7 @@ import org.telegram.ui.Components.URLSpanMono;
 import org.telegram.ui.Components.URLSpanNoUnderline;
 import org.telegram.ui.Components.VideoForwardDrawable;
 import org.telegram.ui.Components.reaction.EmotionInfo;
+import org.telegram.ui.Components.reaction.EmotionUtils;
 import org.telegram.ui.Components.reaction.EmotionsInChatMessage;
 import org.telegram.ui.PhotoViewer;
 import org.telegram.ui.PinchToZoomHelper;
@@ -12127,9 +12128,27 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 r = AndroidUtilities.dp(4);
             }
             float x1 = timeX - AndroidUtilities.dp(bigRadius ? 6 : 4);
+            float additionX = 0;
+            if (currentMessageObject.hasReactions() && DialogObject.isUserDialog(currentMessageObject.getDialogId())) {
+                if (EmotionUtils.extractTotalReactions(currentMessageObject, null) == 2 && currentMessageObject.messageOwner.reactions.results.size() > 1) {
+                    additionX -= AndroidUtilities.dp(32);
+                } else {
+                    additionX -= AndroidUtilities.dp(16);
+                }
+            } else if (currentMessagesGroup != null && currentMessagesGroup.messages.size() > 0) {
+                MessageObject object = currentMessagesGroup.messages.get(0);
+                if (object.hasReactions() && DialogObject.isUserDialog(object.getDialogId())) {
+                    if (EmotionUtils.extractTotalReactions(object, null) == 2 && object.messageOwner.reactions.results.size() > 1) {
+                        additionX -= AndroidUtilities.dp(32);
+                    } else {
+                        additionX -= AndroidUtilities.dp(16);
+                    }
+                }
+            }
+
             float timeY = photoImage.getImageY2() + additionalTimeOffsetY;
             float y1 = timeY - AndroidUtilities.dp(23);
-            rect.set(x1, y1, x1 + timeWidth + AndroidUtilities.dp((bigRadius ? 12 : 8) + (currentMessageObject.isOutOwner() ? 20 : 0)), y1 + AndroidUtilities.dp(17));
+            rect.set(x1 + additionX, y1, x1 + timeWidth + AndroidUtilities.dp((bigRadius ? 12 : 8) + (currentMessageObject.isOutOwner() ? 20 : 0)), y1 + AndroidUtilities.dp(17));
 
             applyServiceShaderMatrix(getMeasuredWidth(), backgroundHeight, getX(), viewTop);
             canvas.drawRoundRect(rect, r, r, paint);

@@ -237,6 +237,7 @@ import org.telegram.ui.Components.URLSpanReplacement;
 import org.telegram.ui.Components.URLSpanUserMention;
 import org.telegram.ui.Components.UndoView;
 import org.telegram.ui.Components.ViewHelper;
+import org.telegram.ui.Components.reaction.EmotionInfo;
 import org.telegram.ui.Components.reaction.ReactionsFactory;
 import org.telegram.ui.Components.reaction.ChooseReactionLayout;
 import org.telegram.ui.Components.reaction.FullScreenReactionDialog;
@@ -660,6 +661,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private ActionBarPopupWindow scrimPopupWindow;
     private ActionBarPopupWindow reactionsUsersPopupWindow;
     private ActionBarPopupWindow mesageSeenUsersPopupWindow;
+    private ActionBarPopupWindow reactionsUsersForSingleReactionPopupWindow;
     private int scrimPopupX, scrimPopupY;
     private ActionBarMenuSubItem[] scrimPopupWindowItems;
     private ActionBarMenuSubItem menuDeleteItem;
@@ -23360,6 +23362,62 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 }
                             }
                         }
+                    }
+
+                    @Override
+                    public void didPressEmotion(ChatMessageCell cell, EmotionInfo emotionInfo) {
+
+                    }
+
+                    @Override
+                    public void didLongPressEmotion(ChatMessageCell cell, EmotionInfo emotionInfo) {
+                        ReactionsFactory.createPopupWithUsersForReaction(emotionInfo, cell, contentView.getContext(), new ReactionsFactory.PopupWithUsersForReactionDelegate() {
+                            @Override
+                            public ActionBarPopupWindow getPopupWindow() {
+                                return reactionsUsersForSingleReactionPopupWindow;
+                            }
+
+                            @Override
+                            public void openFragment(BaseFragment fragment) {
+                                presentFragment(fragment);
+                            }
+
+                            @Override
+                            public int getHeightWithKeyboard() {
+                                return contentView.getHeightWithKeyboard();
+                            }
+
+                            @Override
+                            public int getKeyboardHeight() {
+                                return contentView.getKeyboardHeight();
+                            }
+
+                            @Override
+                            public void showPopupWindow(ActionBarPopupWindow popupWindow, int x, int y) {
+                                reactionsUsersForSingleReactionPopupWindow = popupWindow;
+                                reactionsUsersForSingleReactionPopupWindow.showAtLocation(chatListView, Gravity.LEFT | Gravity.TOP, x, y);
+                            }
+
+                            @Override
+                            public void dismissPopupWindow() {
+                                if (reactionsUsersForSingleReactionPopupWindow != null && reactionsUsersForSingleReactionPopupWindow.isShowing()) {
+                                    reactionsUsersForSingleReactionPopupWindow.dismiss();
+                                }
+                            }
+
+                            @Override
+                            public View getPopupWindowContent() {
+                                if (reactionsUsersForSingleReactionPopupWindow != null && reactionsUsersForSingleReactionPopupWindow.isShowing()) {
+                                    return reactionsUsersForSingleReactionPopupWindow.getContentView();
+                                }
+                                return null;
+                            }
+
+                            @Override
+                            public void deletePopupWindowLink() {
+                                reactionsUsersForSingleReactionPopupWindow = null;
+                            }
+                        });
                     }
 
                     @Override

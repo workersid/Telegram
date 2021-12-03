@@ -23,11 +23,11 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.R;
-import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBarMenuSubItem;
 import org.telegram.ui.ActionBar.ActionBarPopupWindow;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
@@ -167,9 +167,6 @@ public class ReactionsFactory {
                     listView.getLayoutParams().height = listViewTotalHeight;
                 }
 
-                /*Drawable shadowDrawable3 = ContextCompat.getDrawable(delegate.getContext(), R.drawable.popup_fixed_alert).mutate();
-                shadowDrawable3.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground), PorterDuff.Mode.MULTIPLY));
-                listView.setBackground(shadowDrawable3);*/
                 boolean[] backButtonPressed = new boolean[1];
 
                 final ActionBarPopupWindow reactionsUsersPopupWindow = new ActionBarPopupWindow(linearLayout, LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT) {
@@ -213,5 +210,126 @@ public class ReactionsFactory {
             }
         });
         return menuReactionCounterView;
+    }
+
+
+    public interface PopupWithUsersForReactionDelegate {
+        ActionBarPopupWindow getPopupWindow();
+
+        void openFragment(BaseFragment fragment);
+
+        int getHeightWithKeyboard();
+
+        int getKeyboardHeight();
+
+        void showPopupWindow(ActionBarPopupWindow popupWindow, int x, int y);
+
+        void dismissPopupWindow();
+
+        View getPopupWindowContent();
+
+        void deletePopupWindowLink();
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    public static void createPopupWithUsersForReaction(EmotionInfo emotionInfo, ChatMessageCell cel, Context context, final PopupWithUsersForReactionDelegate delegate) {
+        int totalHeight = delegate.getHeightWithKeyboard();
+        int availableHeight = totalHeight - (int) emotionInfo.drawRegion.bottom - AndroidUtilities.dp(46 + 16);
+        availableHeight -= delegate.getKeyboardHeight() / 3f;
+
+        LinearLayout linearLayout = new LinearLayout(context) {
+            @Override
+            protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+                super.onMeasure(MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(260), MeasureSpec.AT_MOST), heightMeasureSpec);
+                setPivotX(getMeasuredWidth() - AndroidUtilities.dp(8));
+                setPivotY(AndroidUtilities.dp(8));
+            }
+
+            @Override
+            public boolean dispatchKeyEvent(KeyEvent event) {
+                if (event.getKeyCode() == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0 && delegate.getPopupWindow() != null && delegate.getPopupWindow().isShowing()) {
+                    delegate.dismissPopupWindow();
+                }
+                return super.dispatchKeyEvent(event);
+            }
+        };
+
+        Drawable shadowDrawable2 = ContextCompat.getDrawable(context, R.drawable.popup_fixed_alert).mutate();
+        shadowDrawable2.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground), PorterDuff.Mode.MULTIPLY));
+        linearLayout.setBackground(shadowDrawable2);
+
+        linearLayout.setOnTouchListener(new View.OnTouchListener() {
+
+            private final int[] pos = new int[2];
+            private final RectF rect = new RectF();
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+                    if (delegate.getPopupWindowContent() != null) {
+                        View contentView = delegate.getPopupWindowContent();
+                        contentView.getLocationInWindow(pos);
+                        rect.set(pos[0], pos[1], pos[0] + contentView.getMeasuredWidth(), pos[1] + contentView.getMeasuredHeight());
+                        if (!rect.contains((int) event.getX(), (int) event.getY())) {
+                            delegate.dismissPopupWindow();
+                        }
+                    }
+                } else if (event.getActionMasked() == MotionEvent.ACTION_OUTSIDE) {
+                    delegate.dismissPopupWindow();
+                }
+                return false;
+            }
+        });
+        linearLayout.setOrientation(LinearLayout.VERTICAL);
+
+        MessageObject selectedObject;
+        if (cel.getCurrentMessagesGroup() != null && cel.getCurrentMessagesGroup().messages.size() > 0) {
+            selectedObject = cel.getCurrentMessagesGroup().messages.get(0);
+        } else {
+            selectedObject = cel.getMessageObject();
+        }
+
+        UserReactionsList listView = new UserReactionsList(context, selectedObject, 0, emotionInfo.reaction, user -> {
+            if (user == null) return;
+            Bundle args = new Bundle();
+            args.putLong("user_id", user.id);
+            ProfileActivity fragment = new ProfileActivity(args);
+            delegate.openFragment(fragment);
+            delegate.dismissPopupWindow();
+        });
+
+        int listViewTotalHeight = AndroidUtilities.dp(8) + AndroidUtilities.dp(44) * listView.getTotalReactions() + AndroidUtilities.dp(16);
+
+        linearLayout.addView(listView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 320, 0, -8, 0, 0));
+
+        if (listViewTotalHeight > availableHeight) {
+            listView.getLayoutParams().height = Math.min(availableHeight, AndroidUtilities.dp(620));
+        } else {
+            listView.getLayoutParams().height = listViewTotalHeight;
+        }
+
+        final ActionBarPopupWindow popupWindow = new ActionBarPopupWindow(linearLayout, LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT) {
+            @Override
+            public void dismiss(boolean animated) {
+                super.dismiss(animated);
+                delegate.deletePopupWindowLink();
+            }
+        };
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setClippingEnabled(true);
+        popupWindow.setFocusable(true);
+        popupWindow.setInputMethodMode(ActionBarPopupWindow.INPUT_METHOD_NOT_NEEDED);
+        popupWindow.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED);
+        popupWindow.getContentView().setFocusableInTouchMode(true);
+
+        final int[] celPos = new int[2];
+        cel.getLocationInWindow(celPos);
+
+        delegate.showPopupWindow(popupWindow, (int) emotionInfo.drawRegion.left - AndroidUtilities.dp(8), celPos[1] + (int) emotionInfo.drawRegion.bottom);
+
+        linearLayout.setAlpha(0f);
+        linearLayout.setScaleX(0f);
+        linearLayout.setScaleY(0f);
+        linearLayout.animate().alpha(1f).scaleX(1f).scaleY(1f).setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT).setDuration(350);
     }
 }

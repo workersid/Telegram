@@ -224,6 +224,12 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         default void didPressCommentButton(ChatMessageCell cell) {
         }
 
+        default void didPressEmotion(ChatMessageCell cell, EmotionInfo emotionInfo) {
+        }
+
+        default void didLongPressEmotion(ChatMessageCell cell, EmotionInfo emotionInfo) {
+        }
+
         default void didPressHint(ChatMessageCell cell, int type) {
         }
 
@@ -3420,12 +3426,14 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             emotionsInChatMessage.setReactions(messageObject, groupedMessages, new EmotionsInChatMessage.OnItemClick() {
                 @Override
                 public void onItemClick(EmotionInfo emotionInfo) {
-                    Log.e("onItemClick","onItemClick");
+                    delegate.didPressEmotion(ChatMessageCell.this, emotionInfo);
+                    //Log.e("onItemClick","onItemClick");
                 }
 
                 @Override
                 public void onItemLongClick(EmotionInfo emotionInfo) {
-                    Log.e("onItemLongClick","onItemLongClick");
+                    delegate.didLongPressEmotion(ChatMessageCell.this, emotionInfo);
+                    //Log.e("onItemLongClick","onItemLongClick");
                 }
             });
 

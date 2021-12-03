@@ -172,6 +172,10 @@ public class UserReactionsList extends FrameLayout {
         addView(usersListView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
     }
 
+    public int getTotalReactions() {
+        return totalReactions;
+    }
+
     public RecyclerListView getUsersListView() {
         return usersListView;
     }

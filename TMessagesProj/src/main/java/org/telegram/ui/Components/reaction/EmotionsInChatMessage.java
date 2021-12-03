@@ -3,12 +3,15 @@ package org.telegram.ui.Components.reaction;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.MotionEvent;
 import android.view.View;
-
-import com.google.android.exoplayer2.util.Log;
+import android.view.ViewConfiguration;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DocumentObject;
@@ -22,9 +25,7 @@ import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Components.AnimatedNumberLayout;
 import org.telegram.ui.Components.AvatarDrawable;
-import org.telegram.ui.MediaCalendarActivity;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,16 +33,23 @@ import java.util.List;
 
 public class EmotionsInChatMessage {
 
+    public interface OnItemClick {
+        void onItemClick(EmotionInfo emotionInfo);
+
+        void onItemLongClick(EmotionInfo emotionInfo);
+    }
+
     private final int currentAccount = UserConfig.selectedAccount;
 
     private final ImageReceiver[] avatarImages = new ImageReceiver[3];
     private final AvatarDrawable[] avatarDrawables = new AvatarDrawable[3];
     private final boolean[] avatarImagesVisible = new boolean[3];
 
-    private final AnimatedNumberLayout[] numberLayouts = new AnimatedNumberLayout[16];
+    private final AnimatedReactionNumberLayout[] numberLayouts = new AnimatedReactionNumberLayout[16];
     private final ImageReceiver[] iconImages = new ImageReceiver[16];
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint selectedPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final List<EmotionInfo> emotionInfoList = new ArrayList<>();
 
     private boolean isInitialized;
@@ -51,24 +59,30 @@ public class EmotionsInChatMessage {
     private View parent;
     private final int oneRowHeight = AndroidUtilities.dp(30);
     private final int oneRowMarginVertical = AndroidUtilities.dp(4);
-    private final int oneItemMarginRight = AndroidUtilities.dp(4);
+    private final int oneItemMarginHorizontal = AndroidUtilities.dp(4);
     private final int oneItemMaxWidth = AndroidUtilities.dp(92);
+    private final int avatarSize = AndroidUtilities.dp(24);
+    private final int iconSize = AndroidUtilities.dp(23);
+    private final int halfAvatarPadding = AndroidUtilities.dp(2);
     private final RectF rectF = new RectF();
     private boolean pressed;
+    private OnItemClick onItemClick;
+    private Handler handler;
 
     public void createForView(View parentView) {
         if (!isInitialized) {
+            handler = new Handler(Looper.getMainLooper());
             for (int a = 0; a < avatarImages.length; a++) {
                 avatarImages[a] = new ImageReceiver(parentView);
                 avatarImages[a].setRoundRadius(AndroidUtilities.dp(12));
                 avatarDrawables[a] = new AvatarDrawable();
                 avatarDrawables[a].setTextSize(AndroidUtilities.dp(8));
-                avatarImages[a].setImageCoords(0, 0, AndroidUtilities.dp(24), AndroidUtilities.dp(24));
+                avatarImages[a].setImageCoords(0, 0, avatarSize, avatarSize);
                 avatarImages[a].setInvalidateAll(true);
             }
 
             for (int a = 0; a < numberLayouts.length; a++) {
-                numberLayouts[a] = new AnimatedNumberLayout(parentView, Theme.chat_replyNamePaint);
+                numberLayouts[a] = new AnimatedReactionNumberLayout(parentView);
             }
 
             for (int a = 0; a < iconImages.length; a++) {
@@ -76,17 +90,21 @@ public class EmotionsInChatMessage {
                 //iconImages[a].setAspectFit(true);
                 //iconImages[a].setLayerNum(1);
                 //iconImages[a].setAutoRepeat(3);
-                iconImages[a].setImageCoords(0, 0, AndroidUtilities.dp(23), AndroidUtilities.dp(23));
+                iconImages[a].setImageCoords(0, 0, iconSize, iconSize);
                 iconImages[a].setInvalidateAll(true);
             }
 
-            paint.setColor(Color.GRAY);
+            paint.setColor(Color.BLACK);
+            selectedPaint.setColor(Color.BLUE);
+            selectedPaint.setStrokeWidth(AndroidUtilities.dp(2));
+            selectedPaint.setStyle(Paint.Style.STROKE);
             parent = parentView;
             isInitialized = true;
         }
     }
 
-    public void setReactions(MessageObject messageObject, MessageObject.GroupedMessages groupedMessages) {
+    public void setReactions(MessageObject messageObject, MessageObject.GroupedMessages groupedMessages, OnItemClick onItemClick) {
+        this.onItemClick = onItemClick;
         if (messageObject != null) {
             if (groupedMessages != null && groupedMessages.messages.size() > 0) {
                 MessageObject object = groupedMessages.messages.get(0);
@@ -132,6 +150,7 @@ public class EmotionsInChatMessage {
                 }
 
                 numberLayouts[i].setNumber(emotionInfo.count, false);
+                numberLayouts[i].setTextColor(Color.RED);
             }
 
             if (!emotionInfo.lastThreeUsers.isEmpty()) {
@@ -163,7 +182,7 @@ public class EmotionsInChatMessage {
 
     public int getMinimumSpaceWidth() {
         if (reactions != null) {
-            return oneItemMaxWidth + oneItemMarginRight;
+            return oneItemMaxWidth + oneItemMarginHorizontal;
         }
         return 0;
     }
@@ -173,7 +192,7 @@ public class EmotionsInChatMessage {
         if (reactions != null) {
             int count = emotionInfoList.size();
             if (count > 0) {
-                int maxCountInRow = width / (oneItemMaxWidth + oneItemMarginRight);
+                int maxCountInRow = width / (oneItemMaxWidth + oneItemMarginHorizontal);
                 if (count > maxCountInRow) {
                     totalHeight = (oneRowHeight + oneRowMarginVertical + oneRowMarginVertical) * 2;
                 } else {
@@ -185,6 +204,9 @@ public class EmotionsInChatMessage {
         return totalHeight = 0;
     }
 
+    private final Path pathCircle = new Path();
+    private final Path pathHalfCircle = new Path();
+
     public void onDraw(Canvas canvas, int startX, int startY, int availableWidth) {
         if (totalHeight == 0 || reactions == null) {
             return;
@@ -192,25 +214,29 @@ public class EmotionsInChatMessage {
 
         int offsetX = startX;
         int offsetY = startY;
-        int countInRow = availableWidth / (oneItemMaxWidth + oneItemMarginRight);
+
+        int drawedRows = 1;
 
         int lastUserAvatarPos = 0;
         for (int i = 0; i < emotionInfoList.size(); i++) {
             EmotionInfo emotionInfo = emotionInfoList.get(i);
             if (i < iconImages.length) {
-                //рисуем иконку
-                //рисуем цифру
-                //рисуем аватары
-
                 int itemWidth = measureWidth(emotionInfo, i);
+                offsetX += oneItemMarginHorizontal;
+
+
                 rectF.set(offsetX, offsetY + (oneRowMarginVertical / 2), offsetX + itemWidth, offsetY + oneRowHeight + (oneRowMarginVertical / 2));
                 emotionInfo.drawRegion.set(rectF);
                 canvas.drawRoundRect(rectF, AndroidUtilities.dp(18), AndroidUtilities.dp(18), paint);
 
+                if (emotionInfo.isSelectedByCurrentUser) {
+                    canvas.drawRoundRect(rectF, AndroidUtilities.dp(18), AndroidUtilities.dp(18), selectedPaint);
+                }
+
                 offsetX += AndroidUtilities.dp(8);
 
                 iconImages[i].setImageX(offsetX);
-                iconImages[i].setImageY(offsetY + ((oneRowHeight + oneRowMarginVertical) - AndroidUtilities.dp(23)) / 2);
+                iconImages[i].setImageY(offsetY + ((oneRowHeight + oneRowMarginVertical) - iconSize) / 2);
                 iconImages[i].draw(canvas);
 
                 offsetX += iconImages[i].getImageWidth() + AndroidUtilities.dp(4);
@@ -218,27 +244,53 @@ public class EmotionsInChatMessage {
                 //цифру НЕ рисуем только в случае наличия всех юзеров
                 if (emotionInfo.count != emotionInfo.lastThreeUsers.size()) {
                     canvas.save();
-                    canvas.translate(offsetX, offsetY);
+                    canvas.translate(offsetX, offsetY + AndroidUtilities.dp(9));
                     numberLayouts[i].draw(canvas);
-                    offsetX += numberLayouts[i].getWidth();
+                    offsetX += numberLayouts[i].getWidth() + AndroidUtilities.dp(4);
                     canvas.restore();
                 }
 
                 if (emotionInfo.lastThreeUsers.size() > 0 && emotionInfo.count == emotionInfo.lastThreeUsers.size()) {
                     for (int a = 0; a < emotionInfo.lastThreeUsers.size(); a++) {
-                        if (lastUserAvatarPos < 2) {
-                            avatarImages[lastUserAvatarPos].setImageX(offsetX);
-                            avatarImages[lastUserAvatarPos].setImageY(offsetY + ((oneRowHeight + oneRowMarginVertical) - AndroidUtilities.dp(24)) / 2);
-                            avatarImages[lastUserAvatarPos].draw(canvas);
+                        if (lastUserAvatarPos <= 2) {
+                            int offsetAvatarX = offsetX;
+                            if (a == 1) {
+                                offsetAvatarX += ((avatarSize / 2) + halfAvatarPadding) + AndroidUtilities.dp(2);
+                            }
+                            if (a == 2) {
+                                offsetAvatarX += ((avatarSize / 2) + halfAvatarPadding) + ((avatarSize / 2) + halfAvatarPadding) + AndroidUtilities.dp(4);
+                            }
+
+                            avatarImages[lastUserAvatarPos].setImageX(offsetAvatarX);
+                            avatarImages[lastUserAvatarPos].setImageY(offsetY + ((oneRowHeight + oneRowMarginVertical) - avatarSize) / 2);
+
+                            //яблочная обрезка
+                            if (a > 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                                pathCircle.reset();
+                                pathHalfCircle.reset();
+                                pathCircle.addCircle(avatarImages[lastUserAvatarPos].getCenterX() - (avatarSize / 2) - halfAvatarPadding, avatarImages[lastUserAvatarPos].getCenterY(), avatarSize / 2, Path.Direction.CW);
+                                pathHalfCircle.addCircle(avatarImages[lastUserAvatarPos].getCenterX(), avatarImages[lastUserAvatarPos].getCenterY(), avatarSize / 2, Path.Direction.CW);
+                                pathHalfCircle.op(pathCircle, Path.Op.DIFFERENCE);
+                                canvas.save();
+                                canvas.clipPath(pathHalfCircle);
+                                avatarImages[lastUserAvatarPos].draw(canvas);
+                                canvas.restore();
+                            } else {
+                                avatarImages[lastUserAvatarPos].draw(canvas);
+                            }
+
                             lastUserAvatarPos++;
                         }
                     }
                 }
 
-                if ((i + 1) * (oneItemMaxWidth + oneItemMarginRight) > availableWidth) {
+                offsetX += oneItemMarginHorizontal;
+
+                if ((i + 1) * (oneItemMaxWidth + oneItemMarginHorizontal) > availableWidth || needNewRow(i + 1, drawedRows)) {
                     if (offsetY != startY) {
                         break;
                     } else {
+                        drawedRows++;
                         offsetY += oneRowHeight + oneRowMarginVertical + oneRowMarginVertical;
                         offsetX = startX;
                     }
@@ -247,24 +299,45 @@ public class EmotionsInChatMessage {
         }
     }
 
+    private boolean needNewRow(int pos, int drawedRows) {
+        //следущий элемент последний, но он будет отрисован на первой строке, а место выделено больше
+        if (emotionInfoList.size() - 1 == pos && drawedRows == 1 && totalHeight > oneRowHeight + oneRowMarginVertical + oneRowMarginVertical) {
+            return true;
+        }
+        return false;
+    }
+
     private int measureWidth(EmotionInfo emotionInfo, int pos) {
         int size = 0;
         size += AndroidUtilities.dp(8);//отступ слева
-        size += AndroidUtilities.dp(23);//иконка
+        size += iconSize;//иконка
         size += AndroidUtilities.dp(4);//отступ после иконки
 
         if (emotionInfo.count != emotionInfo.lastThreeUsers.size()) {
             size += numberLayouts[pos].getWidth();
             size += AndroidUtilities.dp(2);//отступ справа
         }
+        size += measureAvatarsWidth(emotionInfo);
+        size += oneItemMarginHorizontal;
+        return size;
+    }
 
+    private int measureAvatarsWidth(EmotionInfo emotionInfo) {
+        int size = 0;
         if (emotionInfo.lastThreeUsers.size() > 0 && emotionInfo.count == emotionInfo.lastThreeUsers.size()) {
-            size += emotionInfo.count * AndroidUtilities.dp(24);//юзеры
-            size += emotionInfo.count * AndroidUtilities.dp(1);//отступы для юзеров
-            size += AndroidUtilities.dp(1);//отступ справа
-        }
-        size += oneItemMarginRight;
+            if (emotionInfo.lastThreeUsers.size() == 1) {
+                size += avatarSize;//юзеры
+            }
+            if (emotionInfo.lastThreeUsers.size() == 2) {
+                size += avatarSize + ((avatarSize / 2) + halfAvatarPadding);//юзеры треть второй иконки откусана
+            }
+            if (emotionInfo.lastThreeUsers.size() == 3) {
+                size += avatarSize + ((avatarSize / 2) + halfAvatarPadding) + ((avatarSize / 2) + halfAvatarPadding);//юзеры треть второй и третей иконки откусана
+            }
 
+            size += emotionInfo.count * AndroidUtilities.dp(2);//отступы для юзеров
+            size -= AndroidUtilities.dp(1);//отступ справа
+        }
         return size;
     }
 
@@ -284,19 +357,43 @@ public class EmotionsInChatMessage {
         for (ImageReceiver iconImage : iconImages) {
             iconImage.onDetachedFromWindow();
         }
+        handler.removeCallbacksAndMessages(null);
     }
 
     private float pressedX;
     private float pressedY;
+    private Runnable longPressRunnable;
+
+    private void cleanLongPressRunnable() {
+        if (longPressRunnable != null) {
+            handler.removeCallbacks(longPressRunnable);
+            longPressRunnable = null;
+        }
+    }
 
     public boolean checkEmotionsButtonMotionEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            cleanLongPressRunnable();
             pressedX = event.getX();
             pressedY = event.getY();
             for (int i = 0; i < emotionInfoList.size(); i++) {
                 EmotionInfo emotionInfo = emotionInfoList.get(i);
                 if (emotionInfo.drawRegion.contains(pressedX, pressedY)) {
                     pressed = true;
+                    longPressRunnable = () -> {
+                        if (pressed) {
+                            pressed = false;
+                            for (int i2 = 0; i2 < emotionInfoList.size(); i2++) {
+                                EmotionInfo emotionInfo2 = emotionInfoList.get(i2);
+                                if (emotionInfo2.drawRegion.contains(pressedX, pressedY)) {
+                                    if (onItemClick != null) {
+                                        onItemClick.onItemLongClick(emotionInfo2);
+                                    }
+                                }
+                            }
+                        }
+                    };
+                    handler.postDelayed(longPressRunnable, ViewConfiguration.getLongPressTimeout() - ViewConfiguration.getTapTimeout());
                 }
             }
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
@@ -304,12 +401,15 @@ public class EmotionsInChatMessage {
                 for (int i = 0; i < emotionInfoList.size(); i++) {
                     EmotionInfo emotionInfo = emotionInfoList.get(i);
                     if (emotionInfo.drawRegion.contains(pressedX, pressedY)) {
-                        //todo клик
+                        if (onItemClick != null) {
+                            onItemClick.onItemClick(emotionInfo);
+                        }
                     }
                 }
             }
             pressed = false;
         } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
+            cleanLongPressRunnable();
             pressed = false;
         }
         return pressed;

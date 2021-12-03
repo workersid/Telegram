@@ -1378,7 +1378,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
                 getMessagesController().updateReactionsNow(objects);
             }
-            checkReactionsHandler.postDelayed(() -> checkReactionsRunnable.run(), 15001);
+            checkReactionsHandler.postDelayed(() -> checkReactionsRunnable.run(), 6001);
         }
     };
 

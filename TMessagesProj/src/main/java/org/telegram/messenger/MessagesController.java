@@ -8467,12 +8467,20 @@ public class MessagesController extends BaseController implements NotificationCe
         });
     }
 
+    private HashSet<Integer> lastUpdatedReactions = new HashSet<>();
+
     public void updateReactionsNow(ArrayList<MessageObject> visibleObjects) {
         if (visibleObjects == null || visibleObjects.isEmpty()) return;
-        ArrayList<Integer> ids = new ArrayList<>();
+        final ArrayList<Integer> ids = new ArrayList<>();
         for (MessageObject object : visibleObjects) {
-            ids.add(object.getId());
+            if (!lastUpdatedReactions.contains(object.getId())) {
+                ids.add(object.getId());
+            }
         }
+
+        if(ids.isEmpty()) return;
+
+        lastUpdatedReactions.addAll(ids);
 
         TLRPC.TL_messages_getMessagesReactions req = new TLRPC.TL_messages_getMessagesReactions();
         req.peer = getInputPeer(visibleObjects.get(0).getDialogId());
@@ -8482,6 +8490,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 TLRPC.Updates updates = (TLRPC.Updates) response;
                 processUpdates(updates, false);
             }
+            lastUpdatedReactions.removeAll(ids);
         });
     }
 

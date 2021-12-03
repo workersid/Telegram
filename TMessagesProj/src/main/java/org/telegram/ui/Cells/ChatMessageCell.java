@@ -135,6 +135,7 @@ import org.telegram.ui.Components.URLSpanBrowser;
 import org.telegram.ui.Components.URLSpanMono;
 import org.telegram.ui.Components.URLSpanNoUnderline;
 import org.telegram.ui.Components.VideoForwardDrawable;
+import org.telegram.ui.Components.reaction.EmotionInfo;
 import org.telegram.ui.Components.reaction.EmotionsInChatMessage;
 import org.telegram.ui.PhotoViewer;
 import org.telegram.ui.PinchToZoomHelper;
@@ -2126,8 +2127,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (!result) {
             result = checkPollButtonMotionEvent(event);
         }
+
+        boolean checkLongPressByReactions = false;
         if (!result) {
             result = emotionsInChatMessage.checkEmotionsButtonMotionEvent(event);
+            checkLongPressByReactions = result;
         }
 
         if (event.getAction() == MotionEvent.ACTION_CANCEL) {
@@ -2155,7 +2159,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             resetPressedLink(-1);
         }
         updateRadialProgressBackground();
-        if (!disallowLongPress && result && event.getAction() == MotionEvent.ACTION_DOWN) {
+        if (!disallowLongPress && result && event.getAction() == MotionEvent.ACTION_DOWN && !checkLongPressByReactions) {
             startCheckLongPress();
         }
 
@@ -3412,7 +3416,17 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 drawCommentNumber = false;
             }
 
-            emotionsInChatMessage.setReactions(messageObject, groupedMessages);
+            emotionsInChatMessage.setReactions(messageObject, groupedMessages, new EmotionsInChatMessage.OnItemClick() {
+                @Override
+                public void onItemClick(EmotionInfo emotionInfo) {
+                    Log.e("onItemClick","onItemClick");
+                }
+
+                @Override
+                public void onItemLongClick(EmotionInfo emotionInfo) {
+                    Log.e("onItemLongClick","onItemLongClick");
+                }
+            });
 
             if (messageObject.type == 0) {
                 drawForwardedName = !isRepliesChat;

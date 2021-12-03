@@ -205,15 +205,3 @@ public class EmotionCell extends LinearLayout {
         super.onDraw(canvas);
     }
 }
-
-class EmotionInfo {
-    public List<Long> lastThreeUsers = new ArrayList<>();
-    public boolean isSelectedByCurrentUser;
-    public int count;
-    public TLRPC.Document staticIcon;
-    public TLRPC.Document selectIcon;
-    public String reaction;
-    public int messageId;
-    public long dialogId;
-    public RectF drawRegion = new RectF();
-}

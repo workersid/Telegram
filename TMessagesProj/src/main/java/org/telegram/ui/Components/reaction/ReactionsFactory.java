@@ -233,9 +233,14 @@ public class ReactionsFactory {
 
     @SuppressLint("ClickableViewAccessibility")
     public static void createPopupWithUsersForReaction(EmotionInfo emotionInfo, ChatMessageCell cel, Context context, final PopupWithUsersForReactionDelegate delegate) {
+        final int[] celPos = new int[2];
+        cel.getLocationInWindow(celPos);
         int totalHeight = delegate.getHeightWithKeyboard();
-        int availableHeight = totalHeight - (int) emotionInfo.drawRegion.bottom - AndroidUtilities.dp(46 + 16);
+        int availableHeight = totalHeight - (celPos[1] + (int) emotionInfo.drawRegion.bottom);
         availableHeight -= delegate.getKeyboardHeight() / 3f;
+        if (availableHeight < AndroidUtilities.dp(200)) {
+            availableHeight = AndroidUtilities.dp(200);
+        }
 
         LinearLayout linearLayout = new LinearLayout(context) {
             @Override
@@ -321,9 +326,6 @@ public class ReactionsFactory {
         popupWindow.setInputMethodMode(ActionBarPopupWindow.INPUT_METHOD_NOT_NEEDED);
         popupWindow.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED);
         popupWindow.getContentView().setFocusableInTouchMode(true);
-
-        final int[] celPos = new int[2];
-        cel.getLocationInWindow(celPos);
 
         delegate.showPopupWindow(popupWindow, (int) emotionInfo.drawRegion.left - AndroidUtilities.dp(8), celPos[1] + (int) emotionInfo.drawRegion.bottom);
 

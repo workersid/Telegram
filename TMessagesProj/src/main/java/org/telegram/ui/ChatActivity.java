@@ -19006,6 +19006,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         super.onPause();
         doubleClickHandler.removeCallbacksAndMessages(null);
         checkReactionsHandler.removeCallbacksAndMessages(null);
+
+        if(reactionsUsersForSingleReactionPopupWindow!=null) {
+            reactionsUsersForSingleReactionPopupWindow.dismiss();
+        }
+
         if (scrimPopupWindow != null) {
             scrimPopupWindow.setPauseNotifications(false);
             scrimPopupWindow.dismiss();

@@ -394,19 +394,19 @@ public class UserReactionsList extends FrameLayout {
             super(context);
 
             avatarImageView = new BackupImageView(context);
-            addView(avatarImageView, LayoutHelper.createFrame(32, 32, Gravity.CENTER_VERTICAL, 13, 0, 0, 0));
-            avatarImageView.setRoundRadius(AndroidUtilities.dp(16));
+            addView(avatarImageView, LayoutHelper.createFrame(34, 34, Gravity.CENTER_VERTICAL, 13, 0, 0, 0));
+            avatarImageView.setRoundRadius(AndroidUtilities.dp(17));
 
             nameView = new TextView(context);
             nameView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
             nameView.setLines(1);
             nameView.setEllipsize(TextUtils.TruncateAt.END);
-            addView(nameView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.CENTER_VERTICAL, 59, 0, 62, 0));
+            addView(nameView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.CENTER_VERTICAL, 59, 0, 44, 0));
             nameView.setTextColor(Theme.getColor(Theme.key_actionBarDefaultSubmenuItem));
 
             reactionImageView = new BackupImageView(context);
-            reactionImageView.setSize(AndroidUtilities.dp(34), AndroidUtilities.dp(34));
-            addView(reactionImageView, LayoutHelper.createFrame(24 + 12 + 12 + 8, LayoutHelper.MATCH_PARENT, Gravity.RIGHT | Gravity.CENTER_VERTICAL, 0, 0, 0, 0));
+            reactionImageView.setSize(AndroidUtilities.dp(26), AndroidUtilities.dp(26));
+            addView(reactionImageView, LayoutHelper.createFrame(26, LayoutHelper.MATCH_PARENT, Gravity.RIGHT | Gravity.CENTER_VERTICAL, 0, 0, 13, 0));
         }
 
         @Override

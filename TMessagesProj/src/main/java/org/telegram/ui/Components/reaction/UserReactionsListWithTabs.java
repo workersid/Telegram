@@ -3,6 +3,9 @@ package org.telegram.ui.Components.reaction;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.database.DataSetObserver;
+import android.graphics.Canvas;
+import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.os.Parcelable;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +13,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.PagerAdapter;
@@ -18,6 +22,7 @@ import androidx.viewpager.widget.ViewPager;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.Components.LayoutHelper;
@@ -53,6 +58,7 @@ public class UserReactionsListWithTabs extends LinearLayout {
         totalReactions = EmotionUtils.extractTotalReactions(selectedObject, null);
         emotionTabList.addAll(EmotionUtils.extractEmotionInfoList(selectedObject, MediaDataController.getInstance(currentAccount), false));
 
+        FrameLayout viewPagerContainer = new FrameLayout(getContext());
         viewPager = new ViewPager(context);
         viewPager.setAdapter(new PagerAdapter() {
             @Override
@@ -124,6 +130,18 @@ public class UserReactionsListWithTabs extends LinearLayout {
         FrameLayout tabsContainer = new FrameLayout(getContext());
         tabsListView = new RecyclerListView(getContext());
         tabsListView.setLayoutManager(tabsLayoutManager = new LinearLayoutManager(getContext(), RecyclerView.HORIZONTAL, false));
+        tabsListView.addItemDecoration(new RecyclerView.ItemDecoration() {
+            @Override
+            public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+                int p = parent.getChildAdapterPosition(view);
+                if (p == 0) {
+                    outRect.left = AndroidUtilities.dp(8);
+                }
+                if (p == emotionTabList.size() - 1) {
+                    outRect.right = AndroidUtilities.dp(8);
+                }
+            }
+        });
         tabsListView.setAdapter(tabsListAdapter = new RecyclerListView.SelectionAdapter() {
 
             @Override
@@ -152,9 +170,23 @@ public class UserReactionsListWithTabs extends LinearLayout {
                 return emotionTabList.size();
             }
         });
+
+        Drawable headerShadowDrawable = ContextCompat.getDrawable(context, R.drawable.header_shadow).mutate();
+        View headerShadowView = new View(context) {
+            @Override
+            protected void onDraw(Canvas canvas) {
+                super.onDraw(canvas);
+                headerShadowDrawable.setBounds(0, getMeasuredHeight() - AndroidUtilities.dp(2), getMeasuredWidth(), getMeasuredHeight());
+                headerShadowDrawable.draw(canvas);
+            }
+        };
+
+        viewPagerContainer.addView(viewPager, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+        viewPagerContainer.addView(headerShadowView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 2));
+
         tabsContainer.addView(tabsListView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         addView(tabsContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48));
-        addView(viewPager, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+        addView(viewPagerContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
     }
 
     @Override

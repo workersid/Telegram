@@ -2,6 +2,7 @@ package org.telegram.ui.Components.reaction;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
@@ -71,8 +72,8 @@ public class ReactionsFactory {
         final MenuReactionCounterView menuReactionCounterView = new MenuReactionCounterView(parent.getContext(), selectedObject);
         parent.addView(menuReactionCounterView);
 
-        View gap = new View(parent.getContext());
-        gap.setBackgroundColor(Color.GRAY);
+        FrameLayout gap = new FrameLayout(parent.getContext());
+        gap.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
         gap.setMinimumWidth(AndroidUtilities.dp(196));
         gap.setTag(1001);
         gap.setTag(R.id.object_tag, 1);
@@ -80,8 +81,31 @@ public class ReactionsFactory {
         LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams) menuReactionCounterView.getLayoutParams();
         if (LocaleController.isRTL) layoutParams.gravity = Gravity.RIGHT;
         layoutParams.width = LayoutHelper.MATCH_PARENT;
-        layoutParams.height = AndroidUtilities.dp(6);
+        layoutParams.height = AndroidUtilities.dp(8);
         gap.setLayoutParams(layoutParams);
+
+        Drawable headerShadowDrawable = ContextCompat.getDrawable(parent.getContext(), R.drawable.header_shadow).mutate();
+        View headerShadowView = new View(parent.getContext()) {
+            @Override
+            protected void onDraw(Canvas canvas) {
+                super.onDraw(canvas);
+                headerShadowDrawable.setBounds(0, getMeasuredHeight() - AndroidUtilities.dp(2), getMeasuredWidth(), getMeasuredHeight());
+                headerShadowDrawable.draw(canvas);
+            }
+        };
+
+        Drawable bottomShadowDrawable = ContextCompat.getDrawable(parent.getContext(), R.drawable.bottom_shadow).mutate();
+        View bottomShadowView = new View(parent.getContext()) {
+            @Override
+            protected void onDraw(Canvas canvas) {
+                super.onDraw(canvas);
+                bottomShadowDrawable.setBounds(0, getMeasuredHeight() - AndroidUtilities.dp(1), getMeasuredWidth(), getMeasuredHeight());
+                bottomShadowDrawable.draw(canvas);
+            }
+        };
+
+        gap.addView(headerShadowView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 2));
+        gap.addView(bottomShadowView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 1, Gravity.BOTTOM));
 
         menuReactionCounterView.setOnClickListener(v -> {
             if (delegate != null && delegate.getScrimPopupWindow() != null) {
@@ -159,7 +183,7 @@ public class ReactionsFactory {
 
                 backContainer.addView(cell);
                 linearLayout.addView(backContainer);
-                linearLayout.addView(listView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 320, 0, -8, 0, 0));
+                linearLayout.addView(listView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 320, 0, 4, 0, 0));
 
                 if (listViewTotalHeight > availableHeight) {
                     listView.getLayoutParams().height = Math.min(availableHeight, AndroidUtilities.dp(620));
@@ -305,7 +329,7 @@ public class ReactionsFactory {
 
         int listViewTotalHeight = AndroidUtilities.dp(8) + AndroidUtilities.dp(44) * listView.getTotalReactions() + AndroidUtilities.dp(16);
 
-        linearLayout.addView(listView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 320, 0, -8, 0, 0));
+        linearLayout.addView(listView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 320, 0, 0, 0, 0));
 
         if (listViewTotalHeight > availableHeight) {
             listView.getLayoutParams().height = Math.min(availableHeight, AndroidUtilities.dp(620));

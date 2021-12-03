@@ -5,13 +5,17 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Rect;
 import android.graphics.RectF;
+import android.os.Build;
 import android.util.AttributeSet;
+import android.view.View;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MediaDataController;
@@ -34,6 +38,7 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
     private final Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF bgRect = new RectF();
     private final Path bgClipPath = new Path();
+    private final Path pathCircleBig = new Path();
     private final int roundBgRadius = AndroidUtilities.dp(24);
     private Delegate delegate;
 
@@ -65,6 +70,18 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
         listView.setVisibility(GONE);
         listView.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
         listView.setVerticalScrollBarEnabled(false);
+        listView.addItemDecoration(new RecyclerView.ItemDecoration() {
+            @Override
+            public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+                int p = parent.getChildAdapterPosition(view);
+                if (p == 0) {
+                    outRect.left = AndroidUtilities.dp(14);
+                }
+                if (p == listViewAdapter.getItemCount() - 1) {
+                    outRect.right = AndroidUtilities.dp(14);
+                }
+            }
+        });
         listView.setAdapter(listViewAdapter = new ChooseReactionAdapter(context));
         listView.setFastScrollVisible(false);
         addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 66));
@@ -109,15 +126,27 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
         bgClipPath.reset();
-        bgRect.set(0, 0, w, h - AndroidUtilities.dp(18));
+        pathCircleBig.reset();
+        bgRect.set(AndroidUtilities.dp(1), AndroidUtilities.dp(1), w - AndroidUtilities.dp(1), h - AndroidUtilities.dp(18));
         bgClipPath.addRoundRect(bgRect, roundBgRadius, roundBgRadius, Path.Direction.CW);
+
+        pathCircleBig.addCircle(w - AndroidUtilities.dp(31), h - AndroidUtilities.dp(20), AndroidUtilities.dp(8), Path.Direction.CW);
+        pathCircleBig.addCircle(w - AndroidUtilities.dp(25), h - AndroidUtilities.dp(4.5f), AndroidUtilities.dp(3.5f), Path.Direction.CW);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            bgClipPath.op(pathCircleBig, Path.Op.UNION);
+        }
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        canvas.drawCircle(getMeasuredWidth() - AndroidUtilities.dp(20), getMeasuredHeight() - AndroidUtilities.dp(4), AndroidUtilities.dp(4), bgPaint);
-        canvas.drawCircle(getMeasuredWidth() - AndroidUtilities.dp(28), getMeasuredHeight() - AndroidUtilities.dp(20), AndroidUtilities.dp(8), bgPaint);
-        canvas.drawRoundRect(bgRect, roundBgRadius, roundBgRadius, bgPaint);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            canvas.drawPath(bgClipPath, bgPaintWithShadow);
+        } else {
+            canvas.drawCircle(getMeasuredWidth() - AndroidUtilities.dp(25), getMeasuredHeight() - AndroidUtilities.dp(4.5f), AndroidUtilities.dp(3.5f), bgPaint);
+            canvas.drawCircle(getMeasuredWidth() - AndroidUtilities.dp(31), getMeasuredHeight() - AndroidUtilities.dp(20), AndroidUtilities.dp(8), bgPaint);
+            canvas.drawRoundRect(bgRect, roundBgRadius, roundBgRadius, bgPaint);
+        }
         canvas.clipPath(bgClipPath);
         super.onDraw(canvas);
     }

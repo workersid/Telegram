@@ -35,7 +35,7 @@ public class ChooseReactionAdapter extends RecyclerListView.SelectionAdapter {
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = new ChooseReactionStickerCell(context);
-        view.setLayoutParams(new RecyclerView.LayoutParams(AndroidUtilities.dp(44), AndroidUtilities.dp(44)));
+        view.setLayoutParams(new RecyclerView.LayoutParams(AndroidUtilities.dp(40), AndroidUtilities.dp(40)));
         return new RecyclerListView.Holder(view);
     }
 

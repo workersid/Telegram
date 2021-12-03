@@ -46,13 +46,13 @@ public class ChooseReactionStickerCell extends FrameLayout {
         imageView.setLayerNum(1);
         //1 - зацикливать, 2 - единожды отобразит, 3 - только первый кадр
         imageView.getImageReceiver().setAutoRepeat(2);
-        addView(imageView, LayoutHelper.createFrame(44, 44, Gravity.CENTER_HORIZONTAL, 0, 0, 0, 0));
+        addView(imageView, LayoutHelper.createFrame(36, 36, Gravity.TOP, 0, 6, 0, 0));
         setFocusable(true);
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(54) + getPaddingLeft() + getPaddingRight(), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(56), MeasureSpec.EXACTLY));
+        super.onMeasure(MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(44) + getPaddingLeft() + getPaddingRight(), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(56), MeasureSpec.EXACTLY));
     }
 
     public boolean isAnimationReady() {

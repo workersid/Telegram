@@ -135,7 +135,7 @@ public class UserReactionsListWithTabs extends LinearLayout {
             @Override
             public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
                 EmotionCell cell = new EmotionCell(parent.getContext());
-                cell.setLayoutParams(new RecyclerView.LayoutParams(LayoutHelper.WRAP_CONTENT, AndroidUtilities.dp(48)));
+                cell.setLayoutParams(new RecyclerView.LayoutParams(LayoutHelper.WRAP_CONTENT, AndroidUtilities.dp(42)));
                 return new RecyclerListView.Holder(cell);
             }
 

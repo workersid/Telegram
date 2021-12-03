@@ -6,15 +6,18 @@ import android.animation.LayoutTransition;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PorterDuff;
 import android.graphics.RectF;
+import android.graphics.drawable.Drawable;
 import android.view.Gravity;
 import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.FileLoader;
@@ -24,12 +27,10 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AvatarsImageView;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.NumberTextView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +39,7 @@ public class EmotionCell extends LinearLayout {
 
     private final AvatarsImageView avatarsImageView;
     private final BackupImageView imageView;
-    private final NumberTextView numberTextView;
+    private final ReactionNumberTextView numberTextView;
 
     private final RectF bgRect = new RectF();
     private final Path bgClipPath = new Path();
@@ -53,26 +54,26 @@ public class EmotionCell extends LinearLayout {
     public EmotionCell(@NonNull Context context) {
         super(context);
         setOrientation(HORIZONTAL);
-        bgPaint.setColor(Color.BLUE);
-        selectedPaint.setColor(Color.WHITE);
+        bgPaint.setColor(0x1A378dd1);
+        selectedPaint.setColor(0xFF378DD1);
         selectedPaint.setStrokeWidth(AndroidUtilities.dp(2));
         selectedPaint.setStyle(Paint.Style.STROKE);
 
         imageView = new BackupImageView(context);
         imageView.setAspectFit(true);
         imageView.setLayerNum(1);
-        addView(imageView, LayoutHelper.createLinear(24, 24, Gravity.LEFT | Gravity.CENTER_VERTICAL, 11, 0, 0, 0));
+        addView(imageView, LayoutHelper.createLinear(24, 24, Gravity.LEFT | Gravity.CENTER_VERTICAL, 12, 0, 0, 0));
 
-        numberTextView = new NumberTextView(context);
-        numberTextView.setTextSize(18);
+        numberTextView = new ReactionNumberTextView(context);
+        numberTextView.setTextSize(14);
         numberTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-        numberTextView.setTextColor(Theme.getColor(Theme.key_actionBarActionModeDefaultIcon));
-        addView(numberTextView, LayoutHelper.createLinear(30, LayoutHelper.MATCH_PARENT, 0, 0, 0, 0));
+        numberTextView.setTextColor(0xFF378DD1);
+        addView(numberTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, 6, 0, 0, 0));
         numberTextView.setOnTouchListener((v, event) -> true);
 
         avatarsImageView = new AvatarsImageView(context, false);
         avatarsImageView.setStyle(AvatarsImageView.STYLE_MESSAGE_SEEN);
-        addView(avatarsImageView, LayoutHelper.createLinear(24 + 12 + 12 + 8, LayoutHelper.MATCH_PARENT, Gravity.RIGHT | Gravity.CENTER_VERTICAL, 0, 0, 0, 0));
+        addView(avatarsImageView, LayoutHelper.createLinear(24 + 12 + 12 + 8, LayoutHelper.MATCH_PARENT, Gravity.CENTER_VERTICAL, 4, 0, 0, 0));
 
         setWillNotDraw(false);
         setLayoutTransition(new LayoutTransition());
@@ -93,7 +94,13 @@ public class EmotionCell extends LinearLayout {
             TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(emotionInfo.staticIcon.thumbs, 90);
             imageView.setImage(ImageLocation.getForDocument(thumb, emotionInfo.staticIcon), "50_50", "webp", null, emotionInfo);
         } else {
-            imageView.setImageResource(R.drawable.msg_reactions_filled);
+            Drawable drawable = ContextCompat.getDrawable(getContext(), R.drawable.msg_reactions_filled).mutate();
+            drawable.setColorFilter(0xff378DD1, PorterDuff.Mode.MULTIPLY);
+            Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+            drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+            drawable.draw(canvas);
+            imageView.setImageBitmap(bitmap);
         }
 
         numberTextView.setNumber(emotionInfo.count, animated);
@@ -103,6 +110,7 @@ public class EmotionCell extends LinearLayout {
         boolean hasUnknownUsers = false;
 
         if (emotionInfo.count <= 3 && userIds.size() > 0 && emotionInfo.count == userIds.size()) {
+            numberTextView.setVisibility(GONE);
             List<TLRPC.User> users = new ArrayList<>(3);
 
             for (long userId : userIds) {
@@ -129,13 +137,31 @@ public class EmotionCell extends LinearLayout {
             }
             avatarsImageView.commitTransition(animated);
             avatarsImageView.setCount(users.size());
+            if (users.size() == 0) {
+                avatarsImageView.getLayoutParams().width = 0;
+            }
+            if (users.size() == 1) {
+                avatarsImageView.getLayoutParams().width = AndroidUtilities.dp(24 + 12 + 12 + 8);
+                ((MarginLayoutParams) avatarsImageView.getLayoutParams()).leftMargin = -AndroidUtilities.dp(12 + 8);
+            }
+            if (users.size() == 2) {
+                avatarsImageView.getLayoutParams().width = AndroidUtilities.dp(24 + 12 + 12 + 8);
+                ((MarginLayoutParams) avatarsImageView.getLayoutParams()).leftMargin = -AndroidUtilities.dp(8);
+            }
+            if (users.size() == 3) {
+                avatarsImageView.getLayoutParams().width = AndroidUtilities.dp(24 + 12 + 12 + 8);
+                ((MarginLayoutParams) avatarsImageView.getLayoutParams()).leftMargin = AndroidUtilities.dp(4);
+            }
         } else {
+            numberTextView.setVisibility(VISIBLE);
+
             for (int i = 0; i < 3; i++) {
                 avatarsImageView.setObject(i, currentAccount, null);
             }
             avatarsImageView.setTranslationX(0);
             avatarsImageView.commitTransition(animated);
             avatarsImageView.setCount(0);
+            avatarsImageView.getLayoutParams().width = 0;
         }
 
         if (hasUnknownUsers) {
@@ -188,10 +214,15 @@ public class EmotionCell extends LinearLayout {
     }
 
     @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+    }
+
+    @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
         bgClipPath.reset();
-        bgRect.set(0, 0, w, h);
+        bgRect.set(AndroidUtilities.dp(4), AndroidUtilities.dp(4), w - AndroidUtilities.dp(4), h - AndroidUtilities.dp(4));
         bgClipPath.addRoundRect(bgRect, roundBgRadius, roundBgRadius, Path.Direction.CW);
     }
 

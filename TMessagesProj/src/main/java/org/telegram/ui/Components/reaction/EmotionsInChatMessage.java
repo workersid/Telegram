@@ -170,15 +170,17 @@ public class EmotionsInChatMessage {
             EmotionInfo emotionInfo = emotionInfoList.get(i);
             if (i < iconImages.length) {
                 //todo emotionInfo.staticIcon null почему??
-                TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(emotionInfo.staticIcon.thumbs, 90);
-                SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(emotionInfo.staticIcon, Theme.key_windowBackgroundGray, 1.0f);
+                if (emotionInfo.staticIcon != null) {
+                    TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(emotionInfo.staticIcon.thumbs, 90);
+                    SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(emotionInfo.staticIcon, Theme.key_windowBackgroundGray, 1.0f);
 
-                if (svgThumb != null) {
-                    iconImages[i].setImage(ImageLocation.getForDocument(emotionInfo.staticIcon), "80_80", null, null, svgThumb, 0, null, messageObject, 0);
-                } else if (thumb != null) {
-                    iconImages[i].setImage(ImageLocation.getForDocument(emotionInfo.staticIcon), "80_80", ImageLocation.getForDocument(thumb, emotionInfo.staticIcon), null, null, 0, null, messageObject, 0);
-                } else {
-                    iconImages[i].setImage(ImageLocation.getForDocument(emotionInfo.staticIcon), "80_80", null, null, null, 0, null, messageObject, 0);
+                    if (svgThumb != null) {
+                        iconImages[i].setImage(ImageLocation.getForDocument(emotionInfo.staticIcon), "80_80", null, null, svgThumb, 0, null, messageObject, 0);
+                    } else if (thumb != null) {
+                        iconImages[i].setImage(ImageLocation.getForDocument(emotionInfo.staticIcon), "80_80", ImageLocation.getForDocument(thumb, emotionInfo.staticIcon), null, null, 0, null, messageObject, 0);
+                    } else {
+                        iconImages[i].setImage(ImageLocation.getForDocument(emotionInfo.staticIcon), "80_80", null, null, null, 0, null, messageObject, 0);
+                    }
                 }
 
                 numberLayouts[i].setNumber(emotionInfo.count, false);

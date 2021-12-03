@@ -11636,6 +11636,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         int startEmotionsY;
         if (subtractReactionBackgroundHeight != 0) {
             startEmotionsY = ((int) drawTimeY) + (timeLayout.getHeight()) + AndroidUtilities.dp(12);
+            if (commentLayout != null) {
+                startEmotionsY += commentButtonRect.height();
+            }
         } else {
             startEmotionsY = ((int) drawTimeY) + (timeLayout.getHeight()) - reactionHeight;
         }

@@ -7,6 +7,7 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Parcelable;
+import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +17,7 @@ import android.widget.LinearLayout;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
@@ -101,7 +103,6 @@ public class UserReactionsListWithTabs extends LinearLayout {
             @Override
             public void setPrimaryItem(@NonNull ViewGroup container, int position, @NonNull Object object) {
                 super.setPrimaryItem(container, position, object);
-                currentViewPagerPage = position;
             }
 
             @Override
@@ -125,6 +126,7 @@ public class UserReactionsListWithTabs extends LinearLayout {
         });
         viewPager.setPageMargin(0);
         viewPager.setOffscreenPageLimit(1);
+
         viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
@@ -135,14 +137,35 @@ public class UserReactionsListWithTabs extends LinearLayout {
             public void onPageSelected(int ii) {
                 if (tabsListView != null) {
                     try {
-                        if (currentViewPagerPage > ii) {
-                            //на лево
-                            tabsListView.smoothScrollToPosition(ii - 1);
+                        final LinearSmoothScroller linearSmoothScroller = new LinearSmoothScroller(getContext()) {
+                            @Override
+                            protected float calculateSpeedPerPixel(DisplayMetrics displayMetrics) {
+                                return 300f / displayMetrics.densityDpi;
+                            }
+                        };
+
+                        int firstVisiblePosition = tabsLayoutManager.findFirstVisibleItemPosition();
+                        int lastVisiblePosition = tabsLayoutManager.findLastVisibleItemPosition();
+                        if (ii >= firstVisiblePosition && ii <= lastVisiblePosition) {
+                            if (currentViewPagerPage > ii) {
+                                //на лево
+                                if (ii - 1 < 0) {
+                                    linearSmoothScroller.setTargetPosition(0);
+                                } else {
+                                    linearSmoothScroller.setTargetPosition(ii - 1);
+                                }
+                                tabsLayoutManager.startSmoothScroll(linearSmoothScroller);
+                            } else {
+                                //право
+                                linearSmoothScroller.setTargetPosition(ii + 1);
+                                tabsLayoutManager.startSmoothScroll(linearSmoothScroller);
+                            }
                         } else {
-                            //право
-                            tabsListView.smoothScrollToPosition(ii + 1);
+                            linearSmoothScroller.setTargetPosition(ii);
+                            tabsLayoutManager.startSmoothScroll(linearSmoothScroller);
                         }
                     } catch (Exception e) {
+                        e.printStackTrace();
                         //пожарный
                     }
                 }
@@ -153,16 +176,18 @@ public class UserReactionsListWithTabs extends LinearLayout {
                     if (i == currentViewPagerPage) {
                         if (!emotionInfo.isSelectedByCurrentUser) {
                             emotionInfo.isSelectedByCurrentUser = true;
-                            RecyclerView.ViewHolder viewHolder = tabsListView.findViewHolderForAdapterPosition(i);
+                            RecyclerView.ViewHolder viewHolder = tabsListView.findViewHolderForLayoutPosition(i);
                             if (viewHolder != null && viewHolder.itemView instanceof EmotionCell) {
                                 ((EmotionCell) viewHolder.itemView).setEmotionInfo(emotionInfo, true);
+                            } else {
+                                if (tabsListAdapter != null) tabsListAdapter.notifyDataSetChanged();
                             }
                         }
                     } else {
                         if (emotionInfo.isSelectedByCurrentUser) {
                             EmotionInfo copy = emotionInfo.copy();
                             copy.isSelectedByCurrentUser = false;
-                            RecyclerView.ViewHolder viewHolder = tabsListView.findViewHolderForAdapterPosition(i);
+                            RecyclerView.ViewHolder viewHolder = tabsListView.findViewHolderForLayoutPosition(i);
                             if (viewHolder != null && viewHolder.itemView instanceof EmotionCell) {
                                 ((EmotionCell) viewHolder.itemView).setEmotionInfo(copy, true);
                             }
@@ -181,6 +206,7 @@ public class UserReactionsListWithTabs extends LinearLayout {
         FrameLayout tabsContainer = new FrameLayout(getContext());
         tabsListView = new RecyclerListView(getContext());
         tabsListView.setLayoutManager(tabsLayoutManager = new LinearLayoutManager(getContext(), RecyclerView.HORIZONTAL, false));
+
         tabsListView.addItemDecoration(new RecyclerView.ItemDecoration() {
             @Override
             public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {

@@ -78,7 +78,7 @@ public class EmotionCell extends LinearLayout {
         addView(avatarsImageView, LayoutHelper.createLinear(24 + 12 + 12 + 8, LayoutHelper.MATCH_PARENT, Gravity.CENTER_VERTICAL, 4, 0, 0, 0));
 
         setWillNotDraw(false);
-        setLayoutTransition(new LayoutTransition());
+        //setLayoutTransition(new LayoutTransition());
     }
 
     public void setEmotionInfo(EmotionInfo inputEmotionInfo, boolean animated) {
@@ -104,8 +104,6 @@ public class EmotionCell extends LinearLayout {
             drawable.draw(canvas);
             imageView.setImageBitmap(bitmap);
         }
-
-        numberTextView.setNumber(emotionInfo.count, animated);
 
         List<Long> userIds = emotionInfo.lastThreeUsers;
 
@@ -156,6 +154,7 @@ public class EmotionCell extends LinearLayout {
             }
         } else {
             numberTextView.setVisibility(VISIBLE);
+            numberTextView.setNumber(emotionInfo.count, animated);
 
             for (int i = 0; i < 3; i++) {
                 avatarsImageView.setObject(i, currentAccount, null);
@@ -183,6 +182,7 @@ public class EmotionCell extends LinearLayout {
                 }
             }));
         }
+        numberTextView.requestLayout();
     }
 
     private void animatedStroke(boolean show) {

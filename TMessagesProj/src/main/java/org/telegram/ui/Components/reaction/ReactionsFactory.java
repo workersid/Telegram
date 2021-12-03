@@ -179,7 +179,10 @@ public class ReactionsFactory {
                             delegate.dismissReactionsUsersPopupWindow();
                         }
                 );
-                int listViewTotalHeight = AndroidUtilities.dp(8) + AndroidUtilities.dp(44) * listView.getMainTabCount() + AndroidUtilities.dp(16) /*+ (добавить отступ для селекторов)*/;
+                int listViewTotalHeight = AndroidUtilities.dp(44) * listView.getMainTabCount();
+                listViewTotalHeight += AndroidUtilities.dp(44);//кнопка назад
+                listViewTotalHeight += AndroidUtilities.dp(48);//табы
+                listViewTotalHeight += AndroidUtilities.dp(8);//тень
 
                 backContainer.addView(cell);
                 linearLayout.addView(backContainer);
@@ -327,7 +330,7 @@ public class ReactionsFactory {
             delegate.dismissPopupWindow();
         });
 
-        int listViewTotalHeight = AndroidUtilities.dp(8) + AndroidUtilities.dp(44) * listView.getTotalReactions() + AndroidUtilities.dp(16);
+        int listViewTotalHeight = AndroidUtilities.dp(10) + AndroidUtilities.dp(44) * listView.getTotalReactions();
 
         linearLayout.addView(listView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 320, 0, 0, 0, 0));
 

@@ -14,6 +14,7 @@ import android.graphics.PorterDuff;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.view.Gravity;
+import android.view.animation.AccelerateInterpolator;
 import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
@@ -49,6 +50,7 @@ public class EmotionCell extends LinearLayout {
     private EmotionInfo emotionInfo;
     private boolean wasSelected;
     private final int currentAccount = UserConfig.selectedAccount;
+    private static final AccelerateInterpolator interpolator = new AccelerateInterpolator(0.5f);
 
     @SuppressLint("ClickableViewAccessibility")
     public EmotionCell(@NonNull Context context) {
@@ -188,10 +190,10 @@ public class EmotionCell extends LinearLayout {
         if (show) {
             anim = ValueAnimator.ofFloat(AndroidUtilities.dp(0), AndroidUtilities.dp(2));
         } else {
-            anim = ValueAnimator.ofFloat(AndroidUtilities.dp(2), AndroidUtilities.dp(1));
+            anim = ValueAnimator.ofFloat(AndroidUtilities.dp(2), AndroidUtilities.dp(0));
         }
         anim.addUpdateListener(animation -> {
-            int val = (int) animation.getAnimatedValue();
+            float val = (float) animation.getAnimatedValue();
             selectedPaint.setStrokeWidth(val);
             invalidate();
         });
@@ -208,8 +210,8 @@ public class EmotionCell extends LinearLayout {
                 selectedPaint.setStrokeWidth(AndroidUtilities.dp(2));
             }
         });
-        anim.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
-        anim.setDuration(100);
+        anim.setInterpolator(interpolator);
+        anim.setDuration(120);
         anim.start();
     }
 

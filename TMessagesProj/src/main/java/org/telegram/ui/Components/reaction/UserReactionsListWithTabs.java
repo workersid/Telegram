@@ -21,7 +21,6 @@ import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.R;
@@ -62,6 +61,14 @@ public class UserReactionsListWithTabs extends LinearLayout {
         totalReactions = EmotionUtils.extractTotalReactions(selectedObject, null);
         emotionTabList.addAll(EmotionUtils.extractEmotionInfoList(selectedObject, MediaDataController.getInstance(currentAccount), false));
         isMoreThanTenReactionsWithDifferentTypes = EmotionUtils.isMoreThanTenReactionsWithDifferentTypes(selectedObject);
+
+        for (int i = 0; i < emotionTabList.size(); i++) {
+            if (i == 0) {
+                emotionTabList.get(i).isSelectedByCurrentUser = true;
+            } else {
+                emotionTabList.get(i).isSelectedByCurrentUser = false;
+            }
+        }
 
         FrameLayout viewPagerContainer = new FrameLayout(getContext());
         viewPager = new ViewPager(context);
@@ -125,21 +132,44 @@ public class UserReactionsListWithTabs extends LinearLayout {
             }
 
             @Override
-            public void onPageSelected(int i) {
+            public void onPageSelected(int ii) {
                 if (tabsListView != null) {
                     try {
-                        if (currentViewPagerPage > i) {
+                        if (currentViewPagerPage > ii) {
                             //на лево
-                            tabsListView.smoothScrollToPosition(i - 1);
+                            tabsListView.smoothScrollToPosition(ii - 1);
                         } else {
                             //право
-                            tabsListView.smoothScrollToPosition(i + 1);
+                            tabsListView.smoothScrollToPosition(ii + 1);
                         }
                     } catch (Exception e) {
                         //пожарный
                     }
                 }
-                currentViewPagerPage = i;
+                currentViewPagerPage = ii;
+
+                for (int i = 0; i < emotionTabList.size(); i++) {
+                    EmotionInfo emotionInfo = emotionTabList.get(i);
+                    if (i == currentViewPagerPage) {
+                        if (!emotionInfo.isSelectedByCurrentUser) {
+                            emotionInfo.isSelectedByCurrentUser = true;
+                            RecyclerView.ViewHolder viewHolder = tabsListView.findViewHolderForAdapterPosition(i);
+                            if (viewHolder != null && viewHolder.itemView instanceof EmotionCell) {
+                                ((EmotionCell) viewHolder.itemView).setEmotionInfo(emotionInfo, true);
+                            }
+                        }
+                    } else {
+                        if (emotionInfo.isSelectedByCurrentUser) {
+                            EmotionInfo copy = emotionInfo.copy();
+                            copy.isSelectedByCurrentUser = false;
+                            RecyclerView.ViewHolder viewHolder = tabsListView.findViewHolderForAdapterPosition(i);
+                            if (viewHolder != null && viewHolder.itemView instanceof EmotionCell) {
+                                ((EmotionCell) viewHolder.itemView).setEmotionInfo(copy, true);
+                            }
+                            emotionInfo.isSelectedByCurrentUser = false;
+                        }
+                    }
+                }
             }
 
             @Override
@@ -190,6 +220,9 @@ public class UserReactionsListWithTabs extends LinearLayout {
             public int getItemCount() {
                 return emotionTabList.size();
             }
+        });
+        tabsListView.setOnItemClickListener((view, position) -> {
+            viewPager.setCurrentItem(position);
         });
 
         Drawable headerShadowDrawable = ContextCompat.getDrawable(context, R.drawable.header_shadow).mutate();

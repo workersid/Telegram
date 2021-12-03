@@ -17,4 +17,18 @@ public class EmotionInfo {
     public int messageId;
     public long dialogId;
     public RectF drawRegion = new RectF();
+
+    public EmotionInfo copy() {
+        EmotionInfo emotionInfo = new EmotionInfo();
+        emotionInfo.drawRegion = drawRegion;
+        emotionInfo.dialogId = dialogId;
+        emotionInfo.messageId = messageId;
+        emotionInfo.reaction = reaction;
+        emotionInfo.selectIcon = selectIcon;
+        emotionInfo.staticIcon = staticIcon;
+        emotionInfo.count = count;
+        emotionInfo.isSelectedByCurrentUser = isSelectedByCurrentUser;
+        emotionInfo.lastThreeUsers = lastThreeUsers;
+        return emotionInfo;
+    }
 }

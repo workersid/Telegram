@@ -6044,6 +6044,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     reactionHeight = emotionsInChatMessage.getSpaceHeight(getBackgroundDrawableRight() - getBackgroundDrawableLeft()) + AndroidUtilities.dp(16);//отступ для времени
                     subtractReactionBackgroundHeight = 0;
                 } else {
+                    emotionsInChatMessage.setButtonStyleTransparent();
                     reactionHeight = 0;
                     subtractReactionBackgroundHeight = emotionsInChatMessage.getSpaceHeight(getBackgroundDrawableRight() - getBackgroundDrawableLeft());
                 }

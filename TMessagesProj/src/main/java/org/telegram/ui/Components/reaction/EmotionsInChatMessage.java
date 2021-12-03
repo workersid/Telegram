@@ -32,6 +32,9 @@ import java.util.Arrays;
 import java.util.List;
 
 public class EmotionsInChatMessage {
+    private static final int STYLE_TRANSPARENT = 1;
+    private static final int STYLE_GREEN = 2;
+    private static final int STYLE_BLUE = 3;
 
     public interface OnItemClick {
         void onItemClick(EmotionInfo emotionInfo);
@@ -48,7 +51,7 @@ public class EmotionsInChatMessage {
     private final AnimatedReactionNumberLayout[] numberLayouts = new AnimatedReactionNumberLayout[16];
     private final ImageReceiver[] iconImages = new ImageReceiver[16];
 
-    private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint selectedPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final List<EmotionInfo> emotionInfoList = new ArrayList<>();
 
@@ -68,6 +71,7 @@ public class EmotionsInChatMessage {
     private boolean pressed;
     private OnItemClick onItemClick;
     private Handler handler;
+    private int buttonStyle = STYLE_BLUE;
 
     public void createForView(View parentView) {
         if (!isInitialized) {
@@ -94,7 +98,7 @@ public class EmotionsInChatMessage {
                 iconImages[a].setInvalidateAll(true);
             }
 
-            paint.setColor(Color.BLACK);
+            bgPaint.setColor(Color.BLACK);
             selectedPaint.setColor(Color.BLUE);
             selectedPaint.setStrokeWidth(AndroidUtilities.dp(2));
             selectedPaint.setStyle(Paint.Style.STROKE);
@@ -109,12 +113,14 @@ public class EmotionsInChatMessage {
             if (groupedMessages != null && groupedMessages.messages.size() > 0) {
                 MessageObject object = groupedMessages.messages.get(0);
                 if (object.hasReactions()) {
+                    buttonStyle = object.isOutOwner() ? STYLE_GREEN : STYLE_BLUE;
                     this.messageObject = object;
                     this.reactions = object.messageOwner.reactions;
                     bind();
                     return;
                 }
             } else {
+                buttonStyle = messageObject.isOutOwner() ? STYLE_GREEN : STYLE_BLUE;
                 this.messageObject = messageObject;
                 this.reactions = messageObject.messageOwner.reactions;
                 bind();
@@ -127,7 +133,32 @@ public class EmotionsInChatMessage {
         this.emotionInfoList.clear();
     }
 
+    public void setButtonStyleTransparent() {
+        buttonStyle = STYLE_TRANSPARENT;
+        selectedPaint.setColor(0xFFffffff);
+        bgPaint.setColor(0x33214119);
+        for (int i = 0; i < emotionInfoList.size(); i++) {
+            if (i < iconImages.length) {
+                numberLayouts[i].setTextColor(0xFFffffff);
+            }
+        }
+    }
+
     private void bind() {
+        switch (buttonStyle) {
+            case STYLE_BLUE:
+                bgPaint.setColor(0x1A378dd1);
+                selectedPaint.setColor(0xFF378DD1);
+                break;
+            case STYLE_GREEN:
+                bgPaint.setColor(0x1A5ba756);
+                selectedPaint.setColor(0xFF53ac50);
+                break;
+            default:
+                bgPaint.setColor(0x33214119);
+                selectedPaint.setColor(0xFFffffff);
+                break;
+        }
         emotionInfoList.clear();
         emotionInfoList.addAll(EmotionUtils.extractEmotionInfoList(messageObject, MediaDataController.getInstance(currentAccount), true));
 
@@ -138,6 +169,7 @@ public class EmotionsInChatMessage {
         for (int i = 0; i < emotionInfoList.size(); i++) {
             EmotionInfo emotionInfo = emotionInfoList.get(i);
             if (i < iconImages.length) {
+                //todo emotionInfo.staticIcon null почему??
                 TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(emotionInfo.staticIcon.thumbs, 90);
                 SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(emotionInfo.staticIcon, Theme.key_windowBackgroundGray, 1.0f);
 
@@ -150,7 +182,17 @@ public class EmotionsInChatMessage {
                 }
 
                 numberLayouts[i].setNumber(emotionInfo.count, false);
-                numberLayouts[i].setTextColor(Color.RED);
+                switch (buttonStyle) {
+                    case STYLE_BLUE:
+                        numberLayouts[i].setTextColor(0xFF378DD1);
+                        break;
+                    case STYLE_GREEN:
+                        numberLayouts[i].setTextColor(0xFF53ac50);
+                        break;
+                    default:
+                        numberLayouts[i].setTextColor(0xFFffffff);
+                        break;
+                }
             }
 
             if (!emotionInfo.lastThreeUsers.isEmpty()) {
@@ -224,10 +266,9 @@ public class EmotionsInChatMessage {
                 int itemWidth = measureWidth(emotionInfo, i);
                 offsetX += oneItemMarginHorizontal;
 
-
                 rectF.set(offsetX, offsetY + (oneRowMarginVertical / 2), offsetX + itemWidth, offsetY + oneRowHeight + (oneRowMarginVertical / 2));
                 emotionInfo.drawRegion.set(rectF);
-                canvas.drawRoundRect(rectF, AndroidUtilities.dp(18), AndroidUtilities.dp(18), paint);
+                canvas.drawRoundRect(rectF, AndroidUtilities.dp(18), AndroidUtilities.dp(18), bgPaint);
 
                 if (emotionInfo.isSelectedByCurrentUser) {
                     canvas.drawRoundRect(rectF, AndroidUtilities.dp(18), AndroidUtilities.dp(18), selectedPaint);

@@ -20394,9 +20394,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
             ChooseReactionLayout chooseReactionLayout = ReactionsFactory.createChooseReactionLayout(scrimPopupContainerLayout);
             chooseReactionLayout.setDelegate(reaction -> {
-                getSendMessagesHelper().sendReactionNew(selectedObject, reaction.reaction);
-                scrimPopupWindow.dismiss();
-                showDialog(new FullScreenReactionDialog(contentView.getContext(), reaction));
+                if (scrimPopupWindow != null) {
+                    getSendMessagesHelper().sendReactionNew(selectedObject, reaction.reaction);
+                    scrimPopupWindow.dismiss();
+                    showDialog(new FullScreenReactionDialog(contentView.getContext(), reaction));
+                }
             });
             if (messageSeenLayout != null) {
                 scrimPopupContainerLayout.addView(messageSeenLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 60));

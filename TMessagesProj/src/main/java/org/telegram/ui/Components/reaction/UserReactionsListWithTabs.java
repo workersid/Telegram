@@ -68,7 +68,10 @@ public class UserReactionsListWithTabs extends LinearLayout {
         viewPager.setAdapter(new PagerAdapter() {
             @Override
             public int getCount() {
-                return emotionTabList.size();
+                if (isMoreThanTenReactionsWithDifferentTypes) {
+                    return emotionTabList.size();
+                }
+                return 1;
             }
 
             @NonNull
@@ -123,6 +126,19 @@ public class UserReactionsListWithTabs extends LinearLayout {
 
             @Override
             public void onPageSelected(int i) {
+                if (tabsListView != null) {
+                    try {
+                        if (currentViewPagerPage > i) {
+                            //на лево
+                            tabsListView.smoothScrollToPosition(i - 1);
+                        } else {
+                            //право
+                            tabsListView.smoothScrollToPosition(i + 1);
+                        }
+                    } catch (Exception e) {
+                        //пожарный
+                    }
+                }
                 currentViewPagerPage = i;
             }
 

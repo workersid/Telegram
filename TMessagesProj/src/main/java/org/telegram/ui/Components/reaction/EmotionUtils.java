@@ -5,7 +5,9 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.tgnet.TLRPC;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 public class EmotionUtils {
@@ -26,6 +28,19 @@ public class EmotionUtils {
             }
         }
         return 0;
+    }
+
+    public static boolean isMoreThanTenReactionsWithDifferentTypes(MessageObject selectedObject) {
+        if (selectedObject == null) return false;
+        int counter = 0;
+        HashSet<String> types = new HashSet<>(20);
+        if (selectedObject.messageOwner.reactions != null && !selectedObject.messageOwner.reactions.results.isEmpty()) {
+            for (TLRPC.TL_reactionCount result : selectedObject.messageOwner.reactions.results) {
+                counter += result.count;
+                types.add(result.reaction);
+            }
+        }
+        return counter > 10 && types.size() > 1;
     }
 
     public static List<EmotionInfo> extractEmotionInfoList(MessageObject selectedObject, MediaDataController mediaDataController, boolean excludeMain) {
@@ -66,6 +81,8 @@ public class EmotionUtils {
                 }
             }
         }
+
+        Collections.sort(emotionInfoList, (o1, o2) -> Integer.compare(o2.count, o1.count));
 
         return emotionInfoList;
     }

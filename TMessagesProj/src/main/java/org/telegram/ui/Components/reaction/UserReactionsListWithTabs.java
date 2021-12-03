@@ -7,6 +7,7 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Parcelable;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -20,11 +21,13 @@ import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
 
@@ -49,6 +52,7 @@ public class UserReactionsListWithTabs extends LinearLayout {
     private int totalReactions;
 
     private int currentViewPagerPage;
+    private boolean isMoreThanTenReactionsWithDifferentTypes;
 
     public UserReactionsListWithTabs(Context context, final MessageObject selectedObject, int seen, final Delegate delegate) {
         super(context);
@@ -57,6 +61,7 @@ public class UserReactionsListWithTabs extends LinearLayout {
         totalSeen = seen;
         totalReactions = EmotionUtils.extractTotalReactions(selectedObject, null);
         emotionTabList.addAll(EmotionUtils.extractEmotionInfoList(selectedObject, MediaDataController.getInstance(currentAccount), false));
+        isMoreThanTenReactionsWithDifferentTypes = EmotionUtils.isMoreThanTenReactionsWithDifferentTypes(selectedObject);
 
         FrameLayout viewPagerContainer = new FrameLayout(getContext());
         viewPager = new ViewPager(context);
@@ -182,10 +187,40 @@ public class UserReactionsListWithTabs extends LinearLayout {
         };
 
         viewPagerContainer.addView(viewPager, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
-        viewPagerContainer.addView(headerShadowView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 2));
+
+        if (isMoreThanTenReactionsWithDifferentTypes) {
+            viewPagerContainer.addView(headerShadowView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 2));
+            addView(tabsContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48));//табы
+        } else {
+            //разделитель
+            FrameLayout gap = new FrameLayout(context);
+            gap.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
+            gap.setMinimumWidth(AndroidUtilities.dp(196));
+
+            Drawable hDrawable = ContextCompat.getDrawable(context, R.drawable.header_shadow).mutate();
+            View hView = new View(context) {
+                @Override
+                protected void onDraw(Canvas canvas) {
+                    super.onDraw(canvas);
+                    hDrawable.setBounds(0, getMeasuredHeight() - AndroidUtilities.dp(2), getMeasuredWidth(), getMeasuredHeight());
+                    hDrawable.draw(canvas);
+                }
+            };
+            Drawable bDrawable = ContextCompat.getDrawable(context, R.drawable.bottom_shadow).mutate();
+            View bView = new View(context) {
+                @Override
+                protected void onDraw(Canvas canvas) {
+                    super.onDraw(canvas);
+                    bDrawable.setBounds(0, getMeasuredHeight() - AndroidUtilities.dp(2), getMeasuredWidth(), getMeasuredHeight());
+                    bDrawable.draw(canvas);
+                }
+            };
+            gap.addView(hView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 2));
+            gap.addView(bView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 2, Gravity.BOTTOM));
+            addView(gap, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 8));
+        }
 
         tabsContainer.addView(tabsListView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
-        addView(tabsContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48));
         addView(viewPagerContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
     }
 

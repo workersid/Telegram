@@ -181,7 +181,13 @@ public class ReactionsFactory {
                 );
                 int listViewTotalHeight = AndroidUtilities.dp(44) * listView.getMainTabCount();
                 listViewTotalHeight += AndroidUtilities.dp(44);//кнопка назад
-                listViewTotalHeight += AndroidUtilities.dp(48);//табы
+
+                if (EmotionUtils.isMoreThanTenReactionsWithDifferentTypes(selectedObject)) {
+                    listViewTotalHeight += AndroidUtilities.dp(48);//табы
+                } else {
+                    listViewTotalHeight += AndroidUtilities.dp(8);//разделитель
+                }
+
                 listViewTotalHeight += AndroidUtilities.dp(8);//тень
 
                 backContainer.addView(cell);

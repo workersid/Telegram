@@ -221,8 +221,6 @@ public class EmotionsInChatMessage {
         }
 
         //todo подгрузить тех кого нет
-        //todo дернуть кеширование анимаций
-
         parent.invalidate();
     }
 
@@ -465,8 +463,12 @@ public class EmotionsInChatMessage {
                 for (int i = 0; i < emotionInfoList.size(); i++) {
                     EmotionInfo emotionInfo = emotionInfoList.get(i);
                     if (emotionInfo.drawRegion.contains(pressedX, pressedY)) {
-                        if (onItemClick != null) {
-                            onItemClick.onItemClick(emotionInfo);
+                        try {
+                            if (onItemClick != null && iconImages[i].hasBitmapImage()) {
+                                onItemClick.onItemClick(emotionInfo);
+                            }
+                        } catch (Exception e) {
+                            //пожарный
                         }
                     }
                 }

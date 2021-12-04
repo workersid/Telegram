@@ -49,7 +49,12 @@ public class FullScreenReactionStickerCell extends FrameLayout {
         if (document != null) {
             parentObject = parent;
             sticker = document;
-            if (!isEffect) imageView.setSize(size, size);
+            if (!isEffect) {
+                imageView.setSize(size, size);
+            } else {
+                int backgroundSize = Math.min(AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y);
+                imageView.setSize(backgroundSize, backgroundSize);
+            }
             imageView.getImageReceiver().setUniqKeyPrefix(key + "" + new Random().nextInt());
             TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
             SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(document, Theme.key_windowBackgroundGray, 1.0f);
@@ -112,10 +117,10 @@ public class FullScreenReactionStickerCell extends FrameLayout {
 
     public void stopLottie() {
         try {
-            imageView.getImageReceiver().setAllowStartAnimation(false);
-            imageView.getImageReceiver().getLottieAnimation().stop();
             imageView.getImageReceiver().getLottieAnimation().setOnFinishCallback(null, 0);
             imageView.getImageReceiver().setDelegate(null);
+            imageView.getImageReceiver().setAllowStartAnimation(false);
+            imageView.getImageReceiver().getLottieAnimation().stop();
             //imageView.getImageReceiver().clearImage();
         } catch (Exception e) {
             //пожарный

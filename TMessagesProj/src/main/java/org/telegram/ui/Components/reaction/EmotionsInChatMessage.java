@@ -325,7 +325,7 @@ public class EmotionsInChatMessage {
                             } else if (a == 2) {
                                 int offsetTwoAvatar = ((avatarSize / 2) + halfAvatarPadding) + ((avatarSize / 2) + halfAvatarPadding) + AndroidUtilities.dp(4);
                                 offsetAvatarX += offsetTwoAvatar;
-                                avatarOffsetTotal += offsetTwoAvatar;
+                                avatarOffsetTotal += ((avatarSize / 2) + halfAvatarPadding) + AndroidUtilities.dp(3);
                             } else {
                                 avatarOffsetTotal += avatarSize;
                             }

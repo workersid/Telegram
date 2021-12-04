@@ -184,7 +184,7 @@ public class ReactionsFactory {
                         }
                 );
                 int listViewTotalHeight = AndroidUtilities.dp(44) * listView.getMainTabCount();
-                listViewTotalHeight += AndroidUtilities.dp(44);//кнопка назад
+                int backBtnHeight = AndroidUtilities.dp(44);//кнопка назад
 
                 if (EmotionUtils.isMoreThanTenReactionsWithDifferentTypes(selectedObject)) {
                     listViewTotalHeight += AndroidUtilities.dp(48);//табы
@@ -192,13 +192,13 @@ public class ReactionsFactory {
                     listViewTotalHeight += AndroidUtilities.dp(8);//разделитель
                 }
 
-                listViewTotalHeight += AndroidUtilities.dp(8);//тень
+                listViewTotalHeight += AndroidUtilities.dp(8);//тень фона
 
                 backContainer.addView(cell);
                 linearLayout.addView(backContainer);
                 linearLayout.addView(listView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 320, 0, 4, 0, 0));
 
-                if (listViewTotalHeight > availableHeight) {
+                if (backBtnHeight + listViewTotalHeight > availableHeight) {
                     listView.getLayoutParams().height = Math.min(availableHeight, AndroidUtilities.dp(620));
                 } else {
                     listView.getLayoutParams().height = listViewTotalHeight;

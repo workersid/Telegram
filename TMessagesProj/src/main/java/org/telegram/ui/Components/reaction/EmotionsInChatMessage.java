@@ -314,16 +314,21 @@ public class EmotionsInChatMessage {
                 }
 
                 if (emotionInfo.lastThreeUsers.size() > 0 && emotionInfo.count == emotionInfo.lastThreeUsers.size()) {
+                    int avatarOffsetTotal = 0;
                     for (int a = 0; a < emotionInfo.lastThreeUsers.size(); a++) {
                         if (lastUserAvatarPos <= 2) {
                             int offsetAvatarX = offsetX;
                             if (a == 1) {
-                                offsetAvatarX += ((avatarSize / 2) + halfAvatarPadding) + AndroidUtilities.dp(2);
+                                int offsetOneAvatar = ((avatarSize / 2) + halfAvatarPadding) + AndroidUtilities.dp(2);
+                                offsetAvatarX += offsetOneAvatar;
+                                avatarOffsetTotal += offsetOneAvatar;
+                            } else if (a == 2) {
+                                int offsetTwoAvatar = ((avatarSize / 2) + halfAvatarPadding) + ((avatarSize / 2) + halfAvatarPadding) + AndroidUtilities.dp(4);
+                                offsetAvatarX += offsetTwoAvatar;
+                                avatarOffsetTotal += offsetTwoAvatar;
+                            } else {
+                                avatarOffsetTotal += avatarSize;
                             }
-                            if (a == 2) {
-                                offsetAvatarX += ((avatarSize / 2) + halfAvatarPadding) + ((avatarSize / 2) + halfAvatarPadding) + AndroidUtilities.dp(4);
-                            }
-
                             avatarImages[lastUserAvatarPos].setImageX(offsetAvatarX);
                             avatarImages[lastUserAvatarPos].setImageY(offsetY + ((oneRowHeight + oneRowMarginVertical) - avatarSize) / 2);
 
@@ -345,6 +350,7 @@ public class EmotionsInChatMessage {
                             lastUserAvatarPos++;
                         }
                     }
+                    offsetX += avatarOffsetTotal;
                 }
 
                 offsetX += oneItemMarginHorizontal + AndroidUtilities.dp(2);

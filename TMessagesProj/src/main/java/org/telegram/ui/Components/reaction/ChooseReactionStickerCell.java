@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
+import android.os.Handler;
 import android.view.Gravity;
 import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -24,6 +25,9 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.RLottieDrawable;
+
+import java.util.Random;
 
 public class ChooseReactionStickerCell extends FrameLayout {
 
@@ -38,14 +42,35 @@ public class ChooseReactionStickerCell extends FrameLayout {
     private final ImageReceiver imageReceiverEffect = new ImageReceiver();
     private final ImageReceiver imageReceiverActivate = new ImageReceiver();
     private boolean isAnimationReady;
+    private Handler handler;
+    private Random random = new Random();
+    private Runnable randomAnimationRunnable = new Runnable() {
+        @Override
+        public void run() {
+            RLottieDrawable rLottieDrawable = imageView.getImageReceiver().getLottieAnimation();
+            if (rLottieDrawable != null && isAnimationReady) {
+                if (!rLottieDrawable.isRunning()) {
+                    if (random.nextInt(4) == 0) {
+                        imageView.getImageReceiver().setAutoRepeat(2);
+                        imageView.getImageReceiver().setAllowStartAnimation(true);
+                        imageView.getImageReceiver().startAnimation();
+                    }
+                }
+            }
+
+            handler.postDelayed(randomAnimationRunnable, 600);
+        }
+    };
 
     public ChooseReactionStickerCell(Context context) {
         super(context);
+        handler = new Handler();
         imageView = new BackupImageView(context);
         imageView.setAspectFit(true);
         imageView.setLayerNum(1);
         //1 - зацикливать, 2 - единожды отобразит, 3 - только первый кадр
-        imageView.getImageReceiver().setAutoRepeat(2);
+        imageView.getImageReceiver().setAutoRepeat(3);
+
         addView(imageView, LayoutHelper.createFrame(36, 36, Gravity.TOP, 0, 6, 0, 0));
         setFocusable(true);
     }
@@ -161,11 +186,13 @@ public class ChooseReactionStickerCell extends FrameLayout {
         super.onAttachedToWindow();
         imageReceiverActivate.onAttachedToWindow();
         imageReceiverEffect.onAttachedToWindow();
+        handler.postDelayed(randomAnimationRunnable, 600);
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
+        handler.removeCallbacksAndMessages(null);
         imageReceiverActivate.onDetachedFromWindow();
         imageReceiverEffect.onDetachedFromWindow();
     }

@@ -29,6 +29,7 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
 
@@ -75,9 +76,9 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
                 adminsReactions.addAll(chatFull.available_reactions);
             }
         }
-        bgPaint.setColor(Color.WHITE);
-        bgPaintWithShadow.setColor(Color.WHITE);
-        bgPaintWithShadow.setShadowLayer(AndroidUtilities.dp(1), 0.0f, 0.0f, Color.GRAY);
+        bgPaint.setColor(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground));
+        bgPaintWithShadow.setColor(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground));
+        bgPaintWithShadow.setShadowLayer(AndroidUtilities.dp(1.5f), 0.0f, 0.0f, 0x66000000);
         setWillNotDraw(false);
         listView = new RecyclerListView(context);
         listView.setVisibility(GONE);

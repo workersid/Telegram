@@ -17,12 +17,19 @@ import java.util.List;
 
 public class EmotionUtils {
 
-    public static boolean canShowChooseReactionDialog(MessageObject object, MessageObject.GroupedMessages groupedMessages, int chatMode, TLRPC.Chat chat) {
+    public static boolean canShowChooseReactionDialog(MessageObject object, MessageObject.GroupedMessages groupedMessages, int chatMode, TLRPC.Chat chat, TLRPC.ChatFull chatFull) {
         if (object == null) return false;
         object = getMessageObjectForReactions(object, groupedMessages);
 
         if (!object.isSent() || object.isSponsored() || chatMode == MODE_SCHEDULED) //todo MODE_PINNED??
             return false;
+
+        //в чате отображаем реакции установленные админами
+        if (chat != null && chatFull != null) {
+            if (chatFull.available_reactions == null || chatFull.available_reactions.size() == 0) {
+                return false;
+            }
+        }
 
         /*if (chat != null && !ChatObject.canUserDoAction(chat, ACTION_VIEW)) {
             return false;

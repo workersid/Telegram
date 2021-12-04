@@ -1327,7 +1327,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 itemClickRunnable = null;
                 //спонсор, системное, отложенное их не касается
                 if (viewItem instanceof ChatMessageCell) {
-                    getSendMessagesHelper().sendReactionNew(((ChatMessageCell) viewItem).getMessageObject(), null);
+                    MessageObject o = EmotionUtils.getMessageObjectForReactions(((ChatMessageCell) viewItem).getMessageObject(), ((ChatMessageCell) viewItem).getCurrentMessagesGroup());
+                    if (o != null) {
+                        getSendMessagesHelper().sendReactionNew(o, null);
+                    }
                 }
             } else {
                 doubleClickHandler.postDelayed(itemClickRunnable = () -> {
@@ -20404,8 +20407,12 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
 
             ChooseReactionLayout chooseReactionLayout = null;
-            if (EmotionUtils.canShowChooseReactionDialog(selectedObject, groupedMessages, chatMode, currentChat) && type != 1) {
-                chooseReactionLayout = ReactionsFactory.createChooseReactionLayout(scrimPopupContainerLayout);
+            TLRPC.ChatFull tmpChatFull = null;
+            if (currentChat != null) {
+                tmpChatFull = getMessagesController().getChatFull(currentChat.id);
+            }
+            if (EmotionUtils.canShowChooseReactionDialog(selectedObject, groupedMessages, chatMode, currentChat, tmpChatFull) && type != 1) {
+                chooseReactionLayout = ReactionsFactory.createChooseReactionLayout(scrimPopupContainerLayout, selectedObject, groupedMessages);
                 chooseReactionLayout.setDelegate(reaction -> {
                     if (scrimPopupWindow != null) {
                         getSendMessagesHelper().sendReactionNew(selectedObject, reaction.reaction);

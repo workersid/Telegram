@@ -61,8 +61,9 @@ public class ReactionsFactory {
         void deleteReactionsUsersPopupWindowLink();
     }
 
-    public static ChooseReactionLayout createChooseReactionLayout(LinearLayout parent) {
-        ChooseReactionLayout view = new ChooseReactionLayout(parent.getContext());
+    public static ChooseReactionLayout createChooseReactionLayout(LinearLayout parent, MessageObject object, MessageObject.GroupedMessages groupedMessages) {
+        object = EmotionUtils.getMessageObjectForReactions(object, groupedMessages);
+        ChooseReactionLayout view = new ChooseReactionLayout(parent.getContext(), object);
         parent.addView(view, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, 0, 0, -16));
         return view;
     }

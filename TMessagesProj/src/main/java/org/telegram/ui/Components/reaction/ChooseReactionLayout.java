@@ -1,5 +1,7 @@
 package org.telegram.ui.Components.reaction;
 
+import android.animation.LayoutTransition;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -9,6 +11,7 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Build;
 import android.util.AttributeSet;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
 
@@ -18,13 +21,22 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ChatObject;
+import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.MediaDataController;
+import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+
+@SuppressLint("ViewConstructor")
 public class ChooseReactionLayout extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
 
     public interface Delegate {
@@ -41,27 +53,28 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
     private final Path pathCircleBig = new Path();
     private final int roundBgRadius = AndroidUtilities.dp(24);
     private Delegate delegate;
+    private boolean isChatDialog = false;
+    private final HashSet<String> adminsReactions = new HashSet<>();
+    private int containerMaxWidth = 0;
 
-    public ChooseReactionLayout(@NonNull Context context) {
+    public ChooseReactionLayout(@NonNull Context context, MessageObject messageObject) {
         super(context);
-        init(context);
-    }
-
-    public ChooseReactionLayout(@NonNull Context context, @Nullable AttributeSet attrs) {
-        super(context, attrs);
-        init(context);
-    }
-
-    public ChooseReactionLayout(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-        init(context);
+        init(context, messageObject);
     }
 
     public void setDelegate(Delegate delegate) {
         this.delegate = delegate;
     }
 
-    private void init(Context context) {
+    private void init(Context context, MessageObject messageObject) {
+        isChatDialog = DialogObject.isChatDialog(messageObject.getDialogId());
+        if (isChatDialog) {
+            TLRPC.ChatFull chatFull = MessagesController.getInstance(currentAccount).getChatFull(messageObject.getChatId());
+            if (!chatFull.available_reactions.isEmpty()) {
+                adminsReactions.clear();
+                adminsReactions.addAll(chatFull.available_reactions);
+            }
+        }
         bgPaint.setColor(Color.WHITE);
         bgPaintWithShadow.setColor(Color.WHITE);
         bgPaintWithShadow.setShadowLayer(AndroidUtilities.dp(1), 0.0f, 0.0f, Color.GRAY);
@@ -77,14 +90,14 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
                 if (p == 0) {
                     outRect.left = AndroidUtilities.dp(14);
                 }
-                if (p == listViewAdapter.getItemCount() - 1) {
+                /*if (p == listViewAdapter.getItemCount() - 1) {
                     outRect.right = AndroidUtilities.dp(14);
-                }
+                }*/
             }
         });
         listView.setAdapter(listViewAdapter = new ChooseReactionAdapter(context));
         listView.setFastScrollVisible(false);
-        addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 66));
+        addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 66, Gravity.RIGHT, 0, 0, 0, 0));
         listView.setOnItemClickListener((view, position) -> {
             if (delegate != null) {
                 TLRPC.TL_availableReaction reaction = listViewAdapter.getItem(position);
@@ -93,20 +106,56 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
                 }
             }
         });
-        listViewAdapter.setData(MediaDataController.getInstance(currentAccount).getAvailableReactions());
+        setLayoutTransition(new LayoutTransition());
+    }
+
+    public void updateData() {
+        if (listViewAdapter != null) {
+            List<TLRPC.TL_availableReaction> availableReactions = MediaDataController.getInstance(currentAccount).getAvailableReactions();
+            if (!isChatDialog) {
+                listViewAdapter.setData(availableReactions);
+                changeLayerWidth(availableReactions.size());
+            } else {
+                List<TLRPC.TL_availableReaction> resultReaction = new ArrayList<>();
+                for (int i = 0; i < availableReactions.size(); i++) {
+                    TLRPC.TL_availableReaction tlAvailableReaction = availableReactions.get(i);
+                    if (tlAvailableReaction != null && adminsReactions.contains(tlAvailableReaction.reaction)) {
+                        resultReaction.add(tlAvailableReaction);
+                    }
+                }
+                listViewAdapter.setData(resultReaction);
+                changeLayerWidth(resultReaction.size());
+            }
+        }
+    }
+
+    private void changeLayerWidth(int allCount) {
+        //31 отступ
+        float availableWidth = containerMaxWidth - AndroidUtilities.dp(32);
+        //44dp ширина одной ячейки
+        int visibleCount = (int) (availableWidth / AndroidUtilities.dp(44));
+        if (allCount > visibleCount) {
+            //32 отступы
+            ((MarginLayoutParams) getLayoutParams()).leftMargin = 0;
+            getLayoutParams().width = containerMaxWidth;
+        } else {
+            getLayoutParams().width = allCount * AndroidUtilities.dp(44) + AndroidUtilities.dp(14) + AndroidUtilities.dp(4);
+            ((MarginLayoutParams) getLayoutParams()).leftMargin = containerMaxWidth - getLayoutParams().width;
+        }
+        requestLayout();
     }
 
     public void show(int containerWidth) {
-        getLayoutParams().width = containerWidth + AndroidUtilities.dp(32);
+        containerMaxWidth = containerWidth + AndroidUtilities.dp(32);
+        getLayoutParams().width = containerMaxWidth;
         listView.setVisibility(VISIBLE);
+        updateData();
     }
 
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.availableReactionsDidLoad) {
-            if (listViewAdapter != null) {
-                listViewAdapter.setData(MediaDataController.getInstance(currentAccount).getAvailableReactions());
-            }
+            updateData();
         }
     }
 

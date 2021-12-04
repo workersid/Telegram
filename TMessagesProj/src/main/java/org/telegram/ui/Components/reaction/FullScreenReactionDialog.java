@@ -7,6 +7,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
@@ -34,6 +35,11 @@ public class FullScreenReactionDialog extends Dialog {
         container.addView(stickerView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.CENTER));
         container.addView(effectView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.CENTER));
         stickerView.setSticker(reaction.activate_animation, reaction, false, "reaction_" + reaction.reaction + "_" + "sticker", () -> {
+            if (isShowing()) {
+                FullScreenReactionDialog.this.dismiss();
+            }
+        });
+        container.setOnClickListener(v -> {
             if (isShowing()) {
                 FullScreenReactionDialog.this.dismiss();
             }

@@ -22,8 +22,11 @@ import androidx.core.content.ContextCompat;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SendMessagesHelper;
+import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBarMenuSubItem;
 import org.telegram.ui.ActionBar.ActionBarPopupWindow;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -362,5 +365,26 @@ public class ReactionsFactory {
         linearLayout.setScaleX(0f);
         linearLayout.setScaleY(0f);
         linearLayout.animate().alpha(1f).scaleX(1f).scaleY(1f).setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT).setDuration(350);
+    }
+
+    public static FullScreenReactionDialog setReaction(Context context, ChatMessageCell cell, EmotionInfo emotionInfo, MediaDataController mediaDataController, SendMessagesHelper sendMessagesHelper) {
+        MessageObject o = EmotionUtils.getMessageObjectForReactions(cell.getMessageObject(), cell.getCurrentMessagesGroup());
+        if (o != null) {
+            if (o.hasReactions()) {
+                for (int i = 0; i < o.messageOwner.reactions.results.size(); i++) {
+                    TLRPC.TL_reactionCount tlReactionCount = o.messageOwner.reactions.results.get(i);
+                    if (tlReactionCount != null && tlReactionCount.chosen && tlReactionCount.reaction.equals(emotionInfo.reaction)) {
+                        sendMessagesHelper.sendReactionNew(o, null);
+                        return null;
+                    }
+                }
+            }
+            sendMessagesHelper.sendReactionNew(o, emotionInfo.reaction);
+            TLRPC.TL_availableReaction tlAvailableReaction = mediaDataController.getAvailableReactionByName(emotionInfo.reaction);
+            if (tlAvailableReaction != null) {
+                return new FullScreenReactionDialog(context, tlAvailableReaction);
+            }
+        }
+        return null;
     }
 }

@@ -101,7 +101,6 @@ import androidx.recyclerview.widget.LinearSmoothScrollerCustom;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
-import com.google.android.exoplayer2.util.Log;
 
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
@@ -23390,7 +23389,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
                     @Override
                     public void didPressEmotion(ChatMessageCell cell, EmotionInfo emotionInfo) {
-
+                        if (emotionInfo == null || cell == null) return;
+                        FullScreenReactionDialog dialog = ReactionsFactory.setReaction(contentView.getContext(), cell, emotionInfo, getMediaDataController(), getSendMessagesHelper());
+                        if (dialog != null) {
+                            showDialog(dialog);
+                        }
                     }
 
                     @Override

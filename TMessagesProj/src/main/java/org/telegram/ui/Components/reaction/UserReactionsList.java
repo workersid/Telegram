@@ -24,6 +24,7 @@ import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
@@ -420,7 +421,7 @@ public class UserReactionsList extends FrameLayout {
                 avatarDrawable.setInfo(user);
                 ImageLocation imageLocation = ImageLocation.getForUser(user, ImageLocation.TYPE_SMALL);
                 avatarImageView.setImage(imageLocation, "50_50", avatarDrawable, user);
-                nameView.setText(ContactsController.formatName(user.first_name, user.last_name));
+                nameView.setText(UserObject.getUserName(user));
                 avatarImageView.setVisibility(VISIBLE);
                 nameView.setVisibility(VISIBLE);
                 if (reactionDocument != null) {

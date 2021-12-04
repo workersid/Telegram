@@ -273,7 +273,7 @@ public class ReactionsFactory {
         final int[] celPos = new int[2];
         cel.getLocationInWindow(celPos);
         int totalHeight = delegate.getHeightWithKeyboard();
-        int availableHeight = totalHeight - (celPos[1] + (int) emotionInfo.drawRegion.bottom);
+        int availableHeight = totalHeight - (celPos[1] + (int) emotionInfo.drawRegion.bottom) - AndroidUtilities.dp(12);
         availableHeight -= delegate.getKeyboardHeight() / 3f;
         if (availableHeight < AndroidUtilities.dp(200)) {
             availableHeight = AndroidUtilities.dp(200);

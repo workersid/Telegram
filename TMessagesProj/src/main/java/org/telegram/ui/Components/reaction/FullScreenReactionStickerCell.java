@@ -18,6 +18,7 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.RLottieDrawable;
 
 import java.util.Random;
 
@@ -93,14 +94,23 @@ public class FullScreenReactionStickerCell extends FrameLayout {
         }
     }
 
-    public void runLottie(final boolean move) {
+    public void runLottie() {
         imageView.getImageReceiver().setAutoRepeat(2);//или 0?
         imageView.getImageReceiver().setAllowStartAnimation(true);
         imageView.getImageReceiver().startAnimation();
+    }
 
+    public boolean isReadyAnimation() {
+        if (imageView.getImageReceiver() != null && imageView.getImageReceiver().getLottieAnimation() != null) {
+            RLottieDrawable rLottieDrawable = imageView.getImageReceiver().getLottieAnimation();
+            return rLottieDrawable.hasBitmap();
+        }
+        return false;
+    }
+
+    public void startLaunchAnimation(final boolean move) {
         final int bigSize = Math.min(AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y) / 2;
         final int smallSize = AndroidUtilities.dp(48);
-
         if (move) {
             ValueAnimator anim = ValueAnimator.ofInt(smallSize, bigSize);
             anim.addUpdateListener(animation -> {

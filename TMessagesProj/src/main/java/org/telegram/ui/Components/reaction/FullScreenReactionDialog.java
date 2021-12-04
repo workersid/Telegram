@@ -6,8 +6,9 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Gravity;
-import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
@@ -22,6 +23,18 @@ public class FullScreenReactionDialog extends Dialog {
     private FrameLayout container;
     private FullScreenReactionStickerCell stickerView;
     private FullScreenReactionStickerCell effectView;
+    private Handler handler;
+    private final Runnable checkAnimationReadyRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (stickerView.isReadyAnimation() && effectView.isReadyAnimation()) {
+                stickerView.runLottie();
+                effectView.runLottie();
+            } else {
+                handler.postDelayed(checkAnimationReadyRunnable, 100);
+            }
+        }
+    };
 
     public FullScreenReactionDialog(@NonNull Context context, TLRPC.TL_availableReaction reaction) {
         super(context);
@@ -29,6 +42,7 @@ public class FullScreenReactionDialog extends Dialog {
     }
 
     private void init(Context context, TLRPC.TL_availableReaction reaction) {
+        handler = new Handler(Looper.getMainLooper());
         container = new FrameLayout(context);
         stickerView = new FullScreenReactionStickerCell(context);
         effectView = new FullScreenReactionStickerCell(context);
@@ -71,14 +85,21 @@ public class FullScreenReactionDialog extends Dialog {
     @Override
     public void show() {
         super.show();
-        stickerView.runLottie(true);
-        effectView.runLottie(false);
+        stickerView.startLaunchAnimation(true);
+        handler.postDelayed(checkAnimationReadyRunnable, 1);
     }
 
     @Override
     public void dismiss() {
+        handler.removeCallbacksAndMessages(null);
         stickerView.stopLottie();
         effectView.stopLottie();
         super.dismiss();
+    }
+
+    @Override
+    public void onDetachedFromWindow() {
+        handler.removeCallbacksAndMessages(null);
+        super.onDetachedFromWindow();
     }
 }

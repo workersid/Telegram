@@ -247,7 +247,8 @@ public class MenuReactionCounterView extends FrameLayout {
         avatarsImageView.commitTransition(false);
 
         boolean isImageSet = false;
-        if (users.size() == 1 && !isOut) {
+
+        if (users.size() == 1 && /*!isOut*/totalSeen <= 1) {
             TLRPC.TL_messageUserReaction tlMessageUserReaction = selectedObject.messageOwner.reactions.recent_reactons.get(0);
             if (tlMessageUserReaction != null) {
                 TLRPC.TL_availableReaction tlAvailableReaction = MediaDataController.getInstance(currentAccount).getAvailableReactionByName(tlMessageUserReaction.reaction);

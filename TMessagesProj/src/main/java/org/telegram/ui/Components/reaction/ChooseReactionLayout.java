@@ -4,24 +4,20 @@ import android.animation.LayoutTransition;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Build;
-import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
@@ -71,7 +67,7 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
         isChatDialog = DialogObject.isChatDialog(messageObject.getDialogId());
         if (isChatDialog) {
             TLRPC.ChatFull chatFull = MessagesController.getInstance(currentAccount).getChatFull(messageObject.getChatId());
-            if (!chatFull.available_reactions.isEmpty()) {
+            if (chatFull != null && !chatFull.available_reactions.isEmpty()) {
                 adminsReactions.clear();
                 adminsReactions.addAll(chatFull.available_reactions);
             }

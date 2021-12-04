@@ -349,6 +349,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private int additionalTimeOffsetY;
     private int keyboardHeight;
     private int reactionHeight;
+    private int reactionHeightForGroupWithComment;
     private int subtractReactionBackgroundHeight;
     private int linkBlockNum;
     private int linkSelectionBlockNum;
@@ -6056,6 +6057,12 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 subtractReactionBackgroundHeight = 0;
             }
 
+            if (needReactions && drawCommentButton && groupedMessages != null) {
+                reactionHeightForGroupWithComment = emotionsInChatMessage.getSpaceHeight(getBackgroundDrawableRight() - getBackgroundDrawableLeft()) + AndroidUtilities.dp(16);
+            } else {
+                reactionHeightForGroupWithComment = 0;
+            }
+
             if (drawCommentButton) {
                 totalHeight += AndroidUtilities.dp(shouldDrawTimeOnMedia() ? 41.3f : 43);
                 createSelectorDrawable(1);
@@ -11713,7 +11720,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private void drawCaptionLayout(Canvas canvas, StaticLayout captionLayout, boolean selectionOnly, float alpha) {
         if (currentBackgroundDrawable != null && drawCommentButton && timeLayout != null) {
             int x;
-            float y = layoutHeight - AndroidUtilities.dp(18) - timeLayout.getHeight();
+            float y = layoutHeight - AndroidUtilities.dp(18) - timeLayout.getHeight() + reactionHeightForGroupWithComment;
             if (mediaBackground) {
                 x = backgroundDrawableLeft + AndroidUtilities.dp(12) + getExtraTextX();
             } else {
@@ -11754,16 +11761,17 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
 
             int buttonX = getCurrentBackgroundLeft() + AndroidUtilities.dp(currentMessageObject.isOutOwner() || mediaBackground || drawPinnedBottom ? 2 : 8);
-            float buttonY = layoutHeight - AndroidUtilities.dp(45.1f - h2);
+            float buttonY = layoutHeight - AndroidUtilities.dp(45.1f - h2) + reactionHeightForGroupWithComment;
             if (currentPosition != null && (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) == 0 && !currentMessagesGroup.hasSibling) {
                 endX += AndroidUtilities.dp(14);
                 buttonX -= AndroidUtilities.dp(10);
             }
-            commentButtonRect.set(buttonX, (int) buttonY, endX - AndroidUtilities.dp(14), layoutHeight - AndroidUtilities.dp(h));
+            commentButtonRect.set(buttonX, (int) buttonY, endX - AndroidUtilities.dp(14), layoutHeight - AndroidUtilities.dp(h) + reactionHeightForGroupWithComment);
             if (selectorDrawable[1] != null && selectorDrawableMaskType[1] == 2) {
                 selectorDrawable[1].setBounds(commentButtonRect);
                 selectorDrawable[1].draw(canvas);
             }
+
             if (currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0 && currentPosition.minX == 0 && currentPosition.maxX == 0) {
                 Theme.chat_instantViewPaint.setColor(getThemedColor(Theme.key_chat_inPreviewInstantText));
                 boolean drawnAvatars = false;
@@ -11794,6 +11802,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         Theme.chat_replyLinePaint.setColor(getThemedColor(currentMessageObject.isOutOwner() ? Theme.key_chat_outVoiceSeekbar : Theme.key_chat_inVoiceSeekbar));
                     }
                     float ly = layoutHeight - AndroidUtilities.dp(45.1f - h2);
+                    ly += reactionHeightForGroupWithComment;
                     canvas.drawLine(x, ly, endX - AndroidUtilities.dp(14), ly, Theme.chat_replyLinePaint);
                 }
                 if (commentLayout != null && drawSideButton != 3) {

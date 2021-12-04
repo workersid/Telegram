@@ -281,6 +281,7 @@ public class EmotionsInChatMessage {
         int drawedRows = 1;
 
         int lastUserAvatarPos = 0;
+        int posInRow = 0;
         for (int i = 0; i < emotionInfoList.size(); i++) {
             EmotionInfo emotionInfo = emotionInfoList.get(i);
             if (i < iconImages.length) {
@@ -348,14 +349,17 @@ public class EmotionsInChatMessage {
 
                 offsetX += oneItemMarginHorizontal + AndroidUtilities.dp(2);
 
-                if ((i + 1) * (oneItemMaxWidth + oneItemMarginHorizontal) > availableWidth || needNewRow(i + 1, drawedRows)) {
+                if ((posInRow + 1) * (oneItemMaxWidth + oneItemMarginHorizontal) > availableWidth || needNewRow(i + 1, drawedRows)) {
                     if (offsetY != startY) {
                         break;
                     } else {
+                        posInRow = 0;
                         drawedRows++;
                         offsetY += oneRowHeight + oneRowMarginVertical + oneRowMarginVertical;
                         offsetX = startX;
                     }
+                } else {
+                    posInRow++;
                 }
             }
         }

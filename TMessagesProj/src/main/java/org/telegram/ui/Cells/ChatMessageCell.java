@@ -1617,6 +1617,37 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         invalidate();
     }
 
+    private boolean checkEmotionsButtonMotionEvent(MotionEvent event, boolean checkSub) {
+        int x = (int) event.getX();
+        int y = (int) event.getY();
+
+        boolean result = emotionsInChatMessage.checkEmotionsButtonMotionEvent(event);
+        if (result) {
+            return true;
+        }
+
+        if (currentPosition != null && checkSub) {
+            ViewGroup parent = (ViewGroup) getParent();
+
+            for (int i = 0; i < parent.getChildCount(); i++) {
+                View view = parent.getChildAt(i);
+                if (view != this && view instanceof ChatMessageCell) {
+                    ChatMessageCell cell = (ChatMessageCell) view;
+                    if (cell.currentMessagesGroup == currentMessagesGroup && (cell.currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0 && (cell.currentPosition.flags & MessageObject.POSITION_FLAG_RIGHT) != 0) {
+                        MotionEvent childEvent = MotionEvent.obtain(0, 0, event.getActionMasked(), event.getX() + getLeft() - cell.getLeft(), event.getY() + getTop() - cell.getTop(), 0);
+                        result = cell.checkEmotionsButtonMotionEvent(childEvent, false);
+                        childEvent.recycle();
+                        if (result) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
     private boolean checkCommentButtonMotionEvent(MotionEvent event) {
         if (!drawCommentButton) {
             return false;
@@ -2140,7 +2171,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
         boolean checkLongPressByReactions = false;
         if (!result) {
-            result = emotionsInChatMessage.checkEmotionsButtonMotionEvent(event);
+            result = checkEmotionsButtonMotionEvent(event, true);
             checkLongPressByReactions = result;
         }
 

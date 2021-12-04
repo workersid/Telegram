@@ -6088,7 +6088,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 subtractReactionBackgroundHeight = 0;
             }
 
-            if (needReactions && drawCommentButton && groupedMessages != null) {
+            if (needReactions && drawCommentButton && groupedMessages != null && captionLayout != null) {
                 reactionHeightForGroupWithComment = emotionsInChatMessage.getSpaceHeight(getBackgroundDrawableRight() - getBackgroundDrawableLeft()) + AndroidUtilities.dp(16);
             } else {
                 reactionHeightForGroupWithComment = 0;
@@ -11660,7 +11660,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (subtractReactionBackgroundHeight == 0 && reactionHeight == 0) {
             emotionsInChatMessage.onDraw(canvas, (int) (drawTimeX - AndroidUtilities.dp(32)), (int) drawTimeY, AndroidUtilities.dp(32), false);
         } else {
-            int startEmotionsX = getBackgroundDrawableLeft();
+            int startEmotionsX = getBackgroundDrawableLeft() + AndroidUtilities.dp(2);
             int startEmotionsY;
 
             int width = getBackgroundDrawableRight();
@@ -11682,7 +11682,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
     }
 
-    //тут рисуем на холсте первого изображения в группе, а отступ мы сделали у последнего изображения в группе, но инфу расчитали для каждого элемента в группе
+    //тут рисуем на холсте последнего изображения в группе, и отступ сделан у последнего в группе.
     public void drawEmotionsLayout(Canvas canvas, RecyclerListView chatListView) {
         if (getCurrentMessagesGroup() == null) return;
 

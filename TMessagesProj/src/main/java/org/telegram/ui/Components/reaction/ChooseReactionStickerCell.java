@@ -42,9 +42,9 @@ public class ChooseReactionStickerCell extends FrameLayout {
     private final ImageReceiver imageReceiverEffect = new ImageReceiver();
     private final ImageReceiver imageReceiverActivate = new ImageReceiver();
     private boolean isAnimationReady;
-    private Handler handler;
-    private Random random = new Random();
-    private Runnable randomAnimationRunnable = new Runnable() {
+    private final Handler handler;
+    private final Random random = new Random();
+    private final Runnable randomAnimationRunnable = new Runnable() {
         @Override
         public void run() {
             RLottieDrawable rLottieDrawable = imageView.getImageReceiver().getLottieAnimation();

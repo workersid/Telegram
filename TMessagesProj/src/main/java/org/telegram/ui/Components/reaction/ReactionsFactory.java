@@ -320,12 +320,7 @@ public class ReactionsFactory {
         });
         linearLayout.setOrientation(LinearLayout.VERTICAL);
 
-        MessageObject selectedObject;
-        if (cel.getCurrentMessagesGroup() != null && cel.getCurrentMessagesGroup().messages.size() > 0) {
-            selectedObject = cel.getCurrentMessagesGroup().messages.get(0);
-        } else {
-            selectedObject = cel.getMessageObject();
-        }
+        MessageObject selectedObject = EmotionUtils.getMessageObjectForReactions(cel.getMessageObject(), cel.getCurrentMessagesGroup());
 
         UserReactionsList listView = new UserReactionsList(context, selectedObject, 0, emotionInfo.reaction, user -> {
             if (user == null) return;

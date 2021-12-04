@@ -1,5 +1,10 @@
 package org.telegram.ui.Components.reaction;
 
+import static org.telegram.messenger.ChatObject.ACTION_VIEW;
+import static org.telegram.ui.ChatActivity.MODE_SCHEDULED;
+
+import org.telegram.messenger.ChatObject;
+import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.tgnet.TLRPC;
@@ -11,6 +16,43 @@ import java.util.HashSet;
 import java.util.List;
 
 public class EmotionUtils {
+
+    public static boolean canShowChooseReactionDialog(MessageObject object, MessageObject.GroupedMessages groupedMessages, int chatMode, TLRPC.Chat chat) {
+        if (object == null) return false;
+        object = getMessageObjectForReactions(object, groupedMessages);
+
+        if (!object.isSent() || object.isSponsored() || chatMode == MODE_SCHEDULED) //todo MODE_PINNED??
+            return false;
+
+        /*if (chat != null && !ChatObject.canUserDoAction(chat, ACTION_VIEW)) {
+            return false;
+        }*/
+
+        return true;
+    }
+
+    public static MessageObject getMessageObjectForReactions(MessageObject object, MessageObject.GroupedMessages groupedMessages) {
+        if (groupedMessages != null && groupedMessages.messages.size() > 0) {
+            object = groupedMessages.messages.get(0);
+        }
+        return object;
+    }
+
+    public static boolean hasReactions(MessageObject object, MessageObject.GroupedMessages groupedMessages) {
+        if (object == null) return false;
+        return getMessageObjectForReactions(object, groupedMessages).hasReactions();
+    }
+
+    public static boolean hasReactionsAndNotChannelAndNotUserDialog(MessageObject object, MessageObject.GroupedMessages groupedMessages, TLRPC.Chat chat, int chatMode) {
+        if (object == null) return false;
+        return /*object.getId() > 0*/ object.isSent() //отправлено
+                && !object.isSponsored()
+                && getMessageObjectForReactions(object, groupedMessages).hasReactions()
+                && !ChatObject.isChannelAndNotMegaGroup(chat)
+                && !DialogObject.isUserDialog(object.getDialogId())
+                && chatMode != MODE_SCHEDULED;//todo MODE_PINNED??
+    }
+
     public static int extractTotalReactions(MessageObject selectedObject, String reaction) {
         if (selectedObject.messageOwner.reactions != null && !selectedObject.messageOwner.reactions.results.isEmpty()) {
             if (reaction == null) {

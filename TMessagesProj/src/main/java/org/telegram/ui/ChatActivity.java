@@ -238,6 +238,7 @@ import org.telegram.ui.Components.URLSpanUserMention;
 import org.telegram.ui.Components.UndoView;
 import org.telegram.ui.Components.ViewHelper;
 import org.telegram.ui.Components.reaction.EmotionInfo;
+import org.telegram.ui.Components.reaction.EmotionUtils;
 import org.telegram.ui.Components.reaction.ReactionsFactory;
 import org.telegram.ui.Components.reaction.ChooseReactionLayout;
 import org.telegram.ui.Components.reaction.FullScreenReactionDialog;
@@ -20051,9 +20052,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             popupLayout.setBackgroundColor(getThemedColor(Theme.key_actionBarDefaultSubmenuBackground));
 
             int addedReactions = 0;
-            if (selectedObject.hasReactions()) {
+            if (EmotionUtils.hasReactionsAndNotChannelAndNotUserDialog(selectedObject, groupedMessages, currentChat, chatMode)) {
                 addedReactions = 1;
-                ReactionsFactory.createReactionsCounterView(popupLayout, selectedObject, new ReactionsFactory.ReactionsCounterDelegate() {
+                ReactionsFactory.createReactionsCounterView(popupLayout, EmotionUtils.getMessageObjectForReactions(selectedObject, groupedMessages), new ReactionsFactory.ReactionsCounterDelegate() {
                     @Override
                     public ActionBarPopupWindow getScrimPopupWindow() {
                         return scrimPopupWindow;
@@ -20231,7 +20232,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
             MessageSeenView messageSeenView = null;
             FrameLayout messageSeenLayout = null;
-            boolean showMessageSeen = !selectedObject.hasReactions() && currentChat != null && message.isOutOwner() && message.isSent() && !message.isEditing() && !message.isSending() && !message.isSendError() && !message.isContentUnread() && !message.isUnread() && (ConnectionsManager.getInstance(currentAccount).getCurrentTime() - message.messageOwner.date < 7 * 86400)  && (ChatObject.isMegagroup(currentChat) || !ChatObject.isChannel(currentChat)) && chatInfo != null && chatInfo.participants_count < 50 && !(message.messageOwner.action instanceof TLRPC.TL_messageActionChatJoinedByRequest);
+            boolean showMessageSeen = (addedReactions == 0) && currentChat != null && message.isOutOwner() && message.isSent() && !message.isEditing() && !message.isSending() && !message.isSendError() && !message.isContentUnread() && !message.isUnread() && (ConnectionsManager.getInstance(currentAccount).getCurrentTime() - message.messageOwner.date < 7 * 86400)  && (ChatObject.isMegagroup(currentChat) || !ChatObject.isChannel(currentChat)) && chatInfo != null && chatInfo.participants_count < 50 && !(message.messageOwner.action instanceof TLRPC.TL_messageActionChatJoinedByRequest);
             if (showMessageSeen) {
                 messageSeenView = new MessageSeenView(contentView.getContext(), currentAccount, message, currentChat);
                 Drawable shadowDrawable2 = ContextCompat.getDrawable(contentView.getContext(), R.drawable.popup_fixed_alert).mutate();
@@ -20402,14 +20403,18 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 });
             }
 
-            ChooseReactionLayout chooseReactionLayout = ReactionsFactory.createChooseReactionLayout(scrimPopupContainerLayout);
-            chooseReactionLayout.setDelegate(reaction -> {
-                if (scrimPopupWindow != null) {
-                    getSendMessagesHelper().sendReactionNew(selectedObject, reaction.reaction);
-                    scrimPopupWindow.dismiss();
-                    showDialog(new FullScreenReactionDialog(contentView.getContext(), reaction));
-                }
-            });
+            ChooseReactionLayout chooseReactionLayout = null;
+            if (EmotionUtils.canShowChooseReactionDialog(selectedObject, groupedMessages, chatMode, currentChat) && type != 1) {
+                chooseReactionLayout = ReactionsFactory.createChooseReactionLayout(scrimPopupContainerLayout);
+                chooseReactionLayout.setDelegate(reaction -> {
+                    if (scrimPopupWindow != null) {
+                        getSendMessagesHelper().sendReactionNew(selectedObject, reaction.reaction);
+                        scrimPopupWindow.dismiss();
+                        showDialog(new FullScreenReactionDialog(contentView.getContext(), reaction));
+                    }
+                });
+            }
+
             if (messageSeenLayout != null) {
                 scrimPopupContainerLayout.addView(messageSeenLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 60));
             }
@@ -20514,7 +20519,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             } else {
                 popupY = inBubbleMode ? 0 : AndroidUtilities.statusBarHeight;
             }
-            chooseReactionLayout.show(scrimPopupContainerLayout.getMeasuredWidth());
+
+            if (chooseReactionLayout != null) {
+                chooseReactionLayout.show(scrimPopupContainerLayout.getMeasuredWidth());
+            }
+
             scrimPopupWindow.showAtLocation(chatListView, Gravity.LEFT | Gravity.TOP, scrimPopupX = popupX, scrimPopupY = popupY);
             chatListView.stopScroll();
             chatLayoutManager.setCanScrollVertically(false);
@@ -23379,53 +23388,56 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
                     @Override
                     public void didLongPressEmotion(ChatMessageCell cell, EmotionInfo emotionInfo) {
-                        ReactionsFactory.createPopupWithUsersForReaction(emotionInfo, cell, contentView.getContext(), new ReactionsFactory.PopupWithUsersForReactionDelegate() {
-                            @Override
-                            public ActionBarPopupWindow getPopupWindow() {
-                                return reactionsUsersForSingleReactionPopupWindow;
-                            }
-
-                            @Override
-                            public void openFragment(BaseFragment fragment) {
-                                presentFragment(fragment);
-                            }
-
-                            @Override
-                            public int getHeightWithKeyboard() {
-                                return contentView.getHeightWithKeyboard();
-                            }
-
-                            @Override
-                            public int getKeyboardHeight() {
-                                return contentView.getKeyboardHeight();
-                            }
-
-                            @Override
-                            public void showPopupWindow(ActionBarPopupWindow popupWindow, int x, int y) {
-                                reactionsUsersForSingleReactionPopupWindow = popupWindow;
-                                reactionsUsersForSingleReactionPopupWindow.showAtLocation(chatListView, Gravity.LEFT | Gravity.TOP, x, y);
-                            }
-
-                            @Override
-                            public void dismissPopupWindow() {
-                                if (reactionsUsersForSingleReactionPopupWindow != null && reactionsUsersForSingleReactionPopupWindow.isShowing()) {
-                                    reactionsUsersForSingleReactionPopupWindow.dismiss();
+                        if (cell == null) return;
+                        if (EmotionUtils.hasReactionsAndNotChannelAndNotUserDialog(cell.getMessageObject(), cell.getCurrentMessagesGroup(), currentChat, chatMode)) {
+                            ReactionsFactory.createPopupWithUsersForReaction(emotionInfo, cell, contentView.getContext(), new ReactionsFactory.PopupWithUsersForReactionDelegate() {
+                                @Override
+                                public ActionBarPopupWindow getPopupWindow() {
+                                    return reactionsUsersForSingleReactionPopupWindow;
                                 }
-                            }
 
-                            @Override
-                            public View getPopupWindowContent() {
-                                if (reactionsUsersForSingleReactionPopupWindow != null && reactionsUsersForSingleReactionPopupWindow.isShowing()) {
-                                    return reactionsUsersForSingleReactionPopupWindow.getContentView();
+                                @Override
+                                public void openFragment(BaseFragment fragment) {
+                                    presentFragment(fragment);
                                 }
-                                return null;
-                            }
 
-                            @Override
-                            public void deletePopupWindowLink() {
-                                reactionsUsersForSingleReactionPopupWindow = null;
-                            }
-                        });
+                                @Override
+                                public int getHeightWithKeyboard() {
+                                    return contentView.getHeightWithKeyboard();
+                                }
+
+                                @Override
+                                public int getKeyboardHeight() {
+                                    return contentView.getKeyboardHeight();
+                                }
+
+                                @Override
+                                public void showPopupWindow(ActionBarPopupWindow popupWindow, int x, int y) {
+                                    reactionsUsersForSingleReactionPopupWindow = popupWindow;
+                                    reactionsUsersForSingleReactionPopupWindow.showAtLocation(chatListView, Gravity.LEFT | Gravity.TOP, x, y);
+                                }
+
+                                @Override
+                                public void dismissPopupWindow() {
+                                    if (reactionsUsersForSingleReactionPopupWindow != null && reactionsUsersForSingleReactionPopupWindow.isShowing()) {
+                                        reactionsUsersForSingleReactionPopupWindow.dismiss();
+                                    }
+                                }
+
+                                @Override
+                                public View getPopupWindowContent() {
+                                    if (reactionsUsersForSingleReactionPopupWindow != null && reactionsUsersForSingleReactionPopupWindow.isShowing()) {
+                                        return reactionsUsersForSingleReactionPopupWindow.getContentView();
+                                    }
+                                    return null;
+                                }
+
+                                @Override
+                                public void deletePopupWindowLink() {
+                                    reactionsUsersForSingleReactionPopupWindow = null;
+                                }
+                            });
+                        }
                     }
 
                     @Override

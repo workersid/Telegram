@@ -348,7 +348,7 @@ public class EmotionsInChatMessage {
                     }
                 }
 
-                offsetX += oneItemMarginHorizontal;
+                offsetX += oneItemMarginHorizontal + AndroidUtilities.dp(2);
 
                 if ((i + 1) * (oneItemMaxWidth + oneItemMarginHorizontal) > availableWidth || needNewRow(i + 1, drawedRows)) {
                     if (offsetY != startY) {
@@ -379,7 +379,7 @@ public class EmotionsInChatMessage {
 
         if (emotionInfo.count != emotionInfo.lastThreeUsers.size()) {
             size += numberLayouts[pos].getWidth();
-            size += AndroidUtilities.dp(2);//отступ справа
+            size += AndroidUtilities.dp(4);//отступ справа
         }
         size += measureAvatarsWidth(emotionInfo);
         size += oneItemMarginHorizontal;

@@ -121,6 +121,7 @@ import org.telegram.ui.Components.MsgClockDrawable;
 import org.telegram.ui.Components.Point;
 import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RadialProgress2;
+import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.RoundVideoPlayingDrawable;
 import org.telegram.ui.Components.SeekBar;
 import org.telegram.ui.Components.SeekBarAccessibilityDelegate;
@@ -156,6 +157,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     }
 
     boolean enterTransitionInPorgress;
+
     public void setEnterTransitionInProgress(boolean b) {
         enterTransitionInPorgress = b;
         invalidate();
@@ -6016,11 +6018,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 keyboardHeight = 0;
             }
 
-            boolean needReactions = false;
+            boolean needReactions = hasReactions();
             boolean isReactionsInBalloon = true;
-            if (currentMessagesGroup != null && currentMessagesGroup.messages.size() > 0) {
-                MessageObject object = currentMessagesGroup.messages.get(0);
-                needReactions = object.hasReactions();
+            if (needReactions) {
                 if ((documentAttachType == DOCUMENT_ATTACH_TYPE_STICKER ||
                         currentMessageObject.type == MessageObject.TYPE_PHOTO ||  //фото
                         documentAttachType == DOCUMENT_ATTACH_TYPE_GIF ||
@@ -6028,26 +6028,14 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         documentAttachType == DOCUMENT_ATTACH_TYPE_ROUND || //видео в кружке
                         documentAttachType == DOCUMENT_ATTACH_TYPE_THEME ||
                         currentMessageObject.type == 4 ||  //гео
-                        documentAttachType == DOCUMENT_ATTACH_TYPE_WALLPAPER) && captionLayout==null/*TextUtils.isEmpty(object.caption)*/
-                ) {
-                    isReactionsInBalloon = false;
-                }
-            } else {
-                needReactions = messageObject.hasReactions();
-                if ((documentAttachType == DOCUMENT_ATTACH_TYPE_STICKER ||
-                        currentMessageObject.type == MessageObject.TYPE_PHOTO ||  //фото
-                        documentAttachType == DOCUMENT_ATTACH_TYPE_GIF ||
-                        documentAttachType == DOCUMENT_ATTACH_TYPE_VIDEO ||
-                        documentAttachType == DOCUMENT_ATTACH_TYPE_ROUND || //видео в кружке
-                        documentAttachType == DOCUMENT_ATTACH_TYPE_THEME ||
-                        currentMessageObject.type == 4 ||  //гео
-                        documentAttachType == DOCUMENT_ATTACH_TYPE_WALLPAPER) && captionLayout==null/*TextUtils.isEmpty(messageObject.caption)*/
+                        documentAttachType == DOCUMENT_ATTACH_TYPE_WALLPAPER) && captionLayout == null
                 ) {
                     isReactionsInBalloon = false;
                 }
             }
 
-            if (needReactions && (currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0)) {
+            //отступ даем последней картинке
+            if (needReactions && (currentPosition == null || ((currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_RIGHT) != 0 && currentPosition.last))) {
                 if (isReactionsInBalloon) {
                     //reactionHeight только для тех сообщений где расположение в сообщение
                     int tmp = emotionsInChatMessage.getSpaceHeight(getBackgroundDrawableRight() - getBackgroundDrawableLeft());
@@ -6057,7 +6045,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     } else {
                         reactionHeight = 0;
                     }
-
                     subtractReactionBackgroundHeight = 0;
                 } else {
                     emotionsInChatMessage.setButtonStyleTransparent();
@@ -10543,7 +10530,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             drawTime(canvas, 1f, false);
         }
 
-        if (currentPosition == null) {
+        if (currentPosition == null && currentMessagesGroup == null) {
             drawEmotionsLayout(canvas);
         }
 
@@ -11528,6 +11515,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return captionLayout != null;
     }
 
+    public boolean hasReactions() {
+        MessageObject o = EmotionUtils.getMessageObjectForReactions(currentMessageObject, currentMessagesGroup);
+        return o != null && o.hasReactions();
+    }
+
     public boolean hasCommentLayout() {
         return drawCommentButton;
     }
@@ -11628,7 +11620,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     public void drawEmotionsLayout(Canvas canvas) {
         if (subtractReactionBackgroundHeight == 0 && reactionHeight == 0) {
-            emotionsInChatMessage.onDraw(canvas, (int) (drawTimeX - AndroidUtilities.dp(32)), (int) drawTimeY, AndroidUtilities.dp(32));
+            emotionsInChatMessage.onDraw(canvas, (int) (drawTimeX - AndroidUtilities.dp(32)), (int) drawTimeY, AndroidUtilities.dp(32), false);
         } else {
             int startEmotionsX = getBackgroundDrawableLeft();
             int startEmotionsY;
@@ -11648,13 +11640,38 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             width -= startEmotionsX;
 
-            emotionsInChatMessage.onDraw(canvas, startEmotionsX, startEmotionsY, width);
+            emotionsInChatMessage.onDraw(canvas, startEmotionsX, startEmotionsY, width, false);
+        }
+    }
+
+    //тут рисуем на холсте первого изображения в группе, а отступ мы сделали у последнего изображения в группе, но инфу расчитали для каждого элемента в группе
+    public void drawEmotionsLayout(Canvas canvas, RecyclerListView chatListView) {
+        if (getCurrentMessagesGroup() == null) return;
+
+        int startLeft = 0;
+        boolean isSetStartLeft = false;
+        for (int ii = 0; ii < chatListView.getChildCount(); ii++) {
+            View child = chatListView.getChildAt(ii);
+            if (child instanceof ChatMessageCell) {
+                ChatMessageCell cell = ((ChatMessageCell) child);
+                if (cell.getCurrentMessagesGroup() != null
+                        && cell.getCurrentMessagesGroup() == getCurrentMessagesGroup()
+                        && (cell.getCurrentPosition().flags & MessageObject.POSITION_FLAG_LEFT) != 0 && cell.getCurrentPosition().minX == 0 && cell.getCurrentPosition().maxX == 0) {
+                    startLeft = cell.getBackgroundDrawableLeft();
+                    isSetStartLeft = true;
+                    break;
+                }
+            }
+        }
+
+        if (isSetStartLeft) {
+            drawEmotionsLayout(canvas, startLeft);
         }
     }
 
     public void drawEmotionsLayout(Canvas canvas, float startEmotionsX) {
         if (subtractReactionBackgroundHeight == 0 && reactionHeight == 0) {
-            emotionsInChatMessage.onDraw(canvas, (int) (drawTimeX - AndroidUtilities.dp(32)), (int) drawTimeY, AndroidUtilities.dp(32));
+            emotionsInChatMessage.onDraw(canvas, (int) (drawTimeX - AndroidUtilities.dp(32)), (int) drawTimeY, AndroidUtilities.dp(32), true);
         } else {
             int startEmotionsY;
             if (subtractReactionBackgroundHeight != 0) {
@@ -11669,16 +11686,16 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             //верхнее изображение на две клетки
             if (canvas.getClipBounds().left < 0) {
                 if (captionLayout != null) {
-                    emotionsInChatMessage.onDraw(canvas, (int) captionX, startEmotionsY, captionWidth);
+                    emotionsInChatMessage.onDraw(canvas, (int) captionX, startEmotionsY, captionWidth, true);
                 } else {
-                    emotionsInChatMessage.onDraw(canvas, captionOffsetX, startEmotionsY, getBackgroundDrawableRight() - captionOffsetX - AndroidUtilities.dp(4));
+                    emotionsInChatMessage.onDraw(canvas, captionOffsetX, startEmotionsY, getBackgroundDrawableRight() - captionOffsetX - AndroidUtilities.dp(4), true);
                 }
             } else {
                 if (captionLayout != null) {
-                    emotionsInChatMessage.onDraw(canvas, (int) captionX, startEmotionsY, captionWidth);
+                    emotionsInChatMessage.onDraw(canvas, (int) captionX, startEmotionsY, captionWidth, true);
                 } else {
                     startEmotionsX += AndroidUtilities.dp(4);
-                    emotionsInChatMessage.onDraw(canvas, (int) startEmotionsX, startEmotionsY, (int) (getBackgroundDrawableRight() - startEmotionsX - AndroidUtilities.dp(4)));
+                    emotionsInChatMessage.onDraw(canvas, (int) startEmotionsX, startEmotionsY, (int) (getBackgroundDrawableRight() - startEmotionsX - AndroidUtilities.dp(4)), true);
                 }
             }
         }

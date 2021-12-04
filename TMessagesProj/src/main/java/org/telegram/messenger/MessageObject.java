@@ -2410,7 +2410,7 @@ public class MessageObject {
             return;
         }
         wantedBotKeyboardWidth = 0;
-        if (messageOwner.reply_markup instanceof TLRPC.TL_replyInlineMarkup || messageOwner.reactions != null && !messageOwner.reactions.results.isEmpty()) {
+        if (messageOwner.reply_markup instanceof TLRPC.TL_replyInlineMarkup /*|| messageOwner.reactions != null && !messageOwner.reactions.results.isEmpty()*/) {
             Theme.createCommonMessageResources();
             if (botButtonsLayout == null) {
                 botButtonsLayout = new StringBuilder();
@@ -2445,7 +2445,7 @@ public class MessageObject {
                 }
                 wantedBotKeyboardWidth = Math.max(wantedBotKeyboardWidth, (maxButtonSize + AndroidUtilities.dp(12)) * size + AndroidUtilities.dp(5) * (size - 1));
             }
-        } else if (messageOwner.reactions != null) {
+        } /*else if (messageOwner.reactions != null) {
             int size = messageOwner.reactions.results.size();
             for (int a = 0; a < size; a++) {
                 TLRPC.TL_reactionCount reactionCount = messageOwner.reactions.results.get(a);
@@ -2463,7 +2463,7 @@ public class MessageObject {
                 }
                 wantedBotKeyboardWidth = Math.max(wantedBotKeyboardWidth, (maxButtonSize + AndroidUtilities.dp(12)) * size + AndroidUtilities.dp(5) * (size - 1));
             }
-        }
+        }*/
     }
 
     public boolean isVideoAvatar() {

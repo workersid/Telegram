@@ -258,7 +258,7 @@ public class EmotionsInChatMessage {
     private final Path pathCircle = new Path();
     private final Path pathHalfCircle = new Path();
 
-    public void onDraw(Canvas canvas, int startX, int startY, int availableWidth) {
+    public void onDraw(Canvas canvas, int startX, int startY, int availableWidth, boolean isGroup) {
         if (reactions == null) return;
         if (totalHeight == 0) {
             for (int i = 0; i < emotionInfoList.size(); i++) {

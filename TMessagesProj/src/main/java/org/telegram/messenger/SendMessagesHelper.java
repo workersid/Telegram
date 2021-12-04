@@ -61,6 +61,7 @@ import org.telegram.ui.Components.AnimatedFileDrawable;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.Point;
+import org.telegram.ui.Components.reaction.EmotionUtils;
 import org.telegram.ui.PaymentFormActivity;
 import org.telegram.ui.TwoStepVerificationActivity;
 import org.telegram.ui.TwoStepVerificationSetupActivity;
@@ -2678,6 +2679,36 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 }
             });*/
         });
+    }
+
+    public void processDoubleClick(final MessageObject messageObject, final TLRPC.Chat chat) {
+        if (messageObject == null) return;
+
+        if (messageObject.hasReactions()) {
+            for (int i = 0; i < messageObject.messageOwner.reactions.results.size(); i++) {
+                TLRPC.TL_reactionCount tlReactionCount = messageObject.messageOwner.reactions.results.get(i);
+                if (tlReactionCount.chosen) {
+                    sendReactionNew(messageObject, null);
+                    return;
+                }
+            }
+        }
+
+        if (DialogObject.isChatDialog(messageObject.getDialogId()) && chat != null) {
+            TLRPC.ChatFull chatFull = getMessagesController().getChatFull(chat.id);
+            if (chatFull != null) {
+                if (chatFull.available_reactions.contains(EmotionUtils.REACTION_LOVE)) {
+                    sendReactionNew(messageObject, EmotionUtils.REACTION_LOVE);
+                    return;
+                }
+                if (chatFull.available_reactions.contains(EmotionUtils.REACTION_LIKE)) {
+                    sendReactionNew(messageObject, EmotionUtils.REACTION_LIKE);
+                    return;
+                }
+            }
+        } else {
+            sendReactionNew(messageObject, EmotionUtils.REACTION_LOVE);
+        }
     }
 
     public void sendReactionNew(MessageObject messageObject, String reaction) {

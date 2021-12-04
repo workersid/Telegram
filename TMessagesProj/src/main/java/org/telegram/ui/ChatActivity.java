@@ -1329,7 +1329,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 if (viewItem instanceof ChatMessageCell) {
                     MessageObject o = EmotionUtils.getMessageObjectForReactions(((ChatMessageCell) viewItem).getMessageObject(), ((ChatMessageCell) viewItem).getCurrentMessagesGroup());
                     if (o != null) {
-                        getSendMessagesHelper().sendReactionNew(o, null);
+                        getSendMessagesHelper().processDoubleClick(o, currentChat);
                     }
                 }
             } else {

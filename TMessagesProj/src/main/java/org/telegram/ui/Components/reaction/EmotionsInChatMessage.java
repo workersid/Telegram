@@ -227,8 +227,8 @@ public class EmotionsInChatMessage {
     }
 
     public int getMinimumSpaceWidth() {
-        if (reactions != null) {
-            if (messageObject != null && DialogObject.isUserDialog(messageObject.getDialogId())) {
+        if (reactions != null && reactions.results.size() > 0) {
+            if (messageObject != null && !DialogObject.isChatDialog(messageObject.getDialogId())) {
                 return totalHeight = AndroidUtilities.dp(116);
             }
             return oneItemMaxWidth + oneItemMarginHorizontal;
@@ -239,7 +239,7 @@ public class EmotionsInChatMessage {
     public int getSpaceHeight(int width) {
         //максимум две строчки
         if (reactions != null) {
-            if (messageObject != null && DialogObject.isUserDialog(messageObject.getDialogId())) {
+            if (messageObject != null && !DialogObject.isChatDialog(messageObject.getDialogId())) {
                 return totalHeight = 0;
             }
             int count = emotionInfoList.size();

@@ -16,6 +16,8 @@ import java.util.HashSet;
 import java.util.List;
 
 public class EmotionUtils {
+    public static final String REACTION_LOVE = "❤";
+    public static final String REACTION_LIKE = "\uD83D\uDC4D";
 
     public static boolean canShowChooseReactionDialog(MessageObject object, MessageObject.GroupedMessages groupedMessages, int chatMode, TLRPC.Chat chat, TLRPC.ChatFull chatFull) {
         if (object == null) return false;
@@ -23,6 +25,10 @@ public class EmotionUtils {
 
         if (!object.isSent() || object.isSponsored() || chatMode == MODE_SCHEDULED) //todo MODE_PINNED??
             return false;
+
+        if (DialogObject.isEncryptedDialog(object.getDialogId())) {
+            return false;
+        }
 
         //в чате отображаем реакции установленные админами
         if (chat != null && chatFull != null) {

@@ -5,6 +5,8 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.animation.AccelerateInterpolator;
 import android.widget.FrameLayout;
 
@@ -29,6 +31,17 @@ public class FullScreenReactionStickerCell extends FrameLayout {
     private TLRPC.Document sticker;
     private Object parentObject;
     private static final AccelerateInterpolator interpolator = new AccelerateInterpolator(0.5f);
+    private Handler handler;
+    /*private Runnable checkerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if(isReadyAnimation()){
+
+            }
+            handler.postDelayed(checkerRunnable, 350);
+        }
+    };*/
+    private Runnable mFinishCallback;
 
     public FullScreenReactionStickerCell(Context context) {
         super(context);
@@ -38,6 +51,7 @@ public class FullScreenReactionStickerCell extends FrameLayout {
         imageView.getImageReceiver().setAutoRepeat(3);
         addView(imageView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         setFocusable(true);
+        handler = new Handler(Looper.getMainLooper());
     }
 
     @Override
@@ -45,7 +59,7 @@ public class FullScreenReactionStickerCell extends FrameLayout {
         super.onMeasure(MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY));
     }
 
-    public void setSticker(TLRPC.Document document, Object parent, boolean isEffect, String key, Runnable finishCallback) {
+    public void setSticker(TLRPC.Document document, Object parent, boolean isEffect, String key, final Runnable finishCallback) {
         int size = Math.min(AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y) / 2;
         if (document != null) {
             parentObject = parent;
@@ -68,30 +82,53 @@ public class FullScreenReactionStickerCell extends FrameLayout {
                 imageView.setImage(ImageLocation.getForDocument(document), imageFilter, "tgs", null, parentObject);
             }
             if (!isEffect) {
+                mFinishCallback = finishCallback;
                 imageView.getImageReceiver().setDelegate((imageReceiver, set, thumb1, memCache) -> {
                     imageReceiver.getLottieAnimation().setOnFinishCallback(() -> {
-                        final int bigSize = Math.min(AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y) / 2;
-                        final int smallSize = AndroidUtilities.dp(48);
-                        ValueAnimator anim = ValueAnimator.ofInt(bigSize, smallSize);
-                        anim.addUpdateListener(animation -> {
-                            int val = (int) animation.getAnimatedValue();
-                            imageView.setSize(val, val);
-                            imageView.invalidate();
-                        });
-                        anim.addListener(new AnimatorListenerAdapter() {
-                            @Override
-                            public void onAnimationEnd(Animator animation) {
-                                super.onAnimationEnd(animation);
-                                if (finishCallback != null) finishCallback.run();
-                            }
-                        });
-                        anim.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
-                        anim.setDuration(500);
-                        anim.start();
+                        runFinishAnimation();
                     }, imageReceiver.getLottieAnimation().getFramesCount() - 5);//нельзя расчитывать именно на последний кадр, он может не отрендарится из-за троттлинга
                 });
             }
         }
+    }
+
+    private void runFinishAnimation() {
+        final int bigSize = Math.min(AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y) / 2;
+        final int smallSize = AndroidUtilities.dp(2);
+        ValueAnimator anim = ValueAnimator.ofInt(bigSize, smallSize);
+        anim.addUpdateListener(animation -> {
+            int val = (int) animation.getAnimatedValue();
+            imageView.setSize(val, val);
+            imageView.invalidate();
+        });
+        anim.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                if (mFinishCallback != null) mFinishCallback.run();
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                super.onAnimationCancel(animation);
+                if (mFinishCallback != null) mFinishCallback.run();
+            }
+        });
+        anim.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
+        anim.setDuration(400);
+        anim.start();
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        //handler.postDelayed(checkerRunnable, 350);
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        handler.removeCallbacksAndMessages(null);
     }
 
     public void runLottie() {

@@ -291,7 +291,7 @@ public class UserReactionsListWithTabs extends LinearLayout {
                 }
             };
             gap.addView(hView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 2));
-            gap.addView(bView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 2, Gravity.BOTTOM));
+            //gap.addView(bView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 2, Gravity.BOTTOM));
             addView(gap, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 8));
         }
 
@@ -311,6 +311,9 @@ public class UserReactionsListWithTabs extends LinearLayout {
     }
 
     public int getMainTabCount() {
+        if (totalSeen > 0) {
+            return totalSeen;
+        }
         return emotionTabList.get(0).count;
     }
 

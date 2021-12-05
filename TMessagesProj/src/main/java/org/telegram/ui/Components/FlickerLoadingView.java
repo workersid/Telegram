@@ -496,25 +496,25 @@ public class FlickerLoadingView extends View {
             }
         } else if (getViewType() == REACTION_USERS_SEEN_TYPE || getViewType() == REACTION_USERS_TYPE) {
             int count = 0;
-            int radiusBig = AndroidUtilities.dp(16);
+            int radiusBig = AndroidUtilities.dp(17);
             int radiusSmall = AndroidUtilities.dp(10);
             int rectRadius = AndroidUtilities.dp(4);
             while (h <= getMeasuredHeight()) {
-                canvas.drawCircle(checkRtl(paddingLeft + AndroidUtilities.dp(12)) + radiusBig, h + AndroidUtilities.dp(8) + radiusBig, radiusBig, paint);
+                canvas.drawCircle(checkRtl(paddingLeft + AndroidUtilities.dp(12)) + radiusBig, h + AndroidUtilities.dp(4) + radiusBig, radiusBig, paint);
 
                 float endFirst = getMeasuredWidth() * 0.4f + AndroidUtilities.dp(30 * randomParams[0]);
 
-                rectF.set(paddingLeft + AndroidUtilities.dp(58), h + AndroidUtilities.dp(18), paddingLeft + endFirst, h + AndroidUtilities.dp(28));
+                rectF.set(paddingLeft + AndroidUtilities.dp(58), h + AndroidUtilities.dp(17), paddingLeft + endFirst, h + AndroidUtilities.dp(28));
                 checkRtl(rectF);
                 canvas.drawRoundRect(rectF, rectRadius, rectRadius, paint);
 
                 float endSecond = endFirst + AndroidUtilities.dp(8) + AndroidUtilities.dp(30) + ((getMeasuredWidth() - AndroidUtilities.dp(70) - endFirst - AndroidUtilities.dp(8)) * randomParams[0]);
-                rectF.set(paddingLeft + endFirst + AndroidUtilities.dp(8), h + AndroidUtilities.dp(18), paddingLeft + endSecond, h + AndroidUtilities.dp(28));
+                rectF.set(paddingLeft + endFirst + AndroidUtilities.dp(8), h + AndroidUtilities.dp(17), paddingLeft + endSecond, h + AndroidUtilities.dp(28));
                 checkRtl(rectF);
                 canvas.drawRoundRect(rectF, rectRadius, rectRadius, paint);
 
                 if (getViewType() == REACTION_USERS_TYPE) {
-                    canvas.drawCircle(checkRtl(getMeasuredWidth() - AndroidUtilities.dp(32)) + radiusSmall, h + AndroidUtilities.dp(12) + radiusSmall, radiusSmall, paint);
+                    canvas.drawCircle(checkRtl(getMeasuredWidth() - AndroidUtilities.dp(34)) + radiusSmall, h + AndroidUtilities.dp(12) + radiusSmall, radiusSmall, paint);
                 }
 
                 h += getCellHeight(getMeasuredWidth());

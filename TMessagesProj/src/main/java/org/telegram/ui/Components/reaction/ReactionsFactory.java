@@ -109,7 +109,7 @@ public class ReactionsFactory {
         };
 
         gap.addView(headerShadowView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 2));
-        gap.addView(bottomShadowView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 1, Gravity.BOTTOM));
+        //gap.addView(bottomShadowView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 1, Gravity.BOTTOM));
 
         menuReactionCounterView.setOnClickListener(v -> {
             if (delegate != null && delegate.getScrimPopupWindow() != null) {

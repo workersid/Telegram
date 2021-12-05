@@ -1327,7 +1327,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 //спонсор, системное, отложенное их не касается
                 if (viewItem instanceof ChatMessageCell) {
                     MessageObject o = EmotionUtils.getMessageObjectForReactions(((ChatMessageCell) viewItem).getMessageObject(), ((ChatMessageCell) viewItem).getCurrentMessagesGroup());
-                    if (o != null) {
+                    if (o != null && o.isSent()) {
                         getSendMessagesHelper().processDoubleClick(o, currentChat);
                     }
                 }

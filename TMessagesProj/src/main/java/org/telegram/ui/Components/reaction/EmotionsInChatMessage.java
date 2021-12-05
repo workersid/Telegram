@@ -146,6 +146,10 @@ public class EmotionsInChatMessage {
         }
     }
 
+    public boolean isButtonStyleTransparent() {
+        return buttonStyle == STYLE_TRANSPARENT;
+    }
+
     private void bind() {
         switch (buttonStyle) {
             case STYLE_BLUE:

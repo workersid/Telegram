@@ -314,6 +314,11 @@ public class UserReactionsListWithTabs extends LinearLayout {
         if (totalSeen > 0) {
             return totalSeen;
         }
+
+        if (emotionTabList.isEmpty()) {
+            return 0;
+        }
+
         return emotionTabList.get(0).count;
     }
 

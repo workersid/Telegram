@@ -183,6 +183,7 @@ public class ReactionsFactory {
                             delegate.dismissReactionsUsersPopupWindow();
                         }
                 );
+                if (listView.getMainTabCount() <= 0) return;
                 int listViewTotalHeight = AndroidUtilities.dp(44) * listView.getMainTabCount();
                 int backBtnHeight = AndroidUtilities.dp(44);//кнопка назад
 

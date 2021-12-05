@@ -123,7 +123,7 @@ public class AdminReactionsActivity extends BaseFragment implements Notification
                 });
             }
             AndroidUtilities.runOnUIThread(() -> getMessagesController().loadFullChat(chatId, 0, true), 1000);
-        }, ConnectionsManager.RequestFlagInvokeAfter);
+        });
     }
 
     private void checkChanges() {

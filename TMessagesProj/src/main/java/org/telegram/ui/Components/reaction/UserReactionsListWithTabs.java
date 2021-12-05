@@ -8,7 +8,6 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Parcelable;
 import android.util.DisplayMetrics;
-import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -25,6 +24,7 @@ import androidx.viewpager.widget.ViewPager;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC;
@@ -36,7 +36,7 @@ import java.util.ArrayList;
 
 @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal"})
 @SuppressLint("ViewConstructor")
-public class UserReactionsListWithTabs extends LinearLayout {
+public class UserReactionsListWithTabs extends LinearLayout implements NotificationCenter.NotificationCenterDelegate {
     interface Delegate {
         void onItemClick(TLRPC.User user);
     }
@@ -300,13 +300,21 @@ public class UserReactionsListWithTabs extends LinearLayout {
     }
 
     @Override
+    public void didReceivedNotification(int id, int account, Object... args) {
+        if (id == NotificationCenter.availableReactionsDidLoad) {
+            if(tabsListAdapter!=null) tabsListAdapter.notifyDataSetChanged();
+        }
+    }
+
+    @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        //todo подписка на ивенты
+        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.availableReactionsDidLoad);
     }
 
     @Override
     protected void onDetachedFromWindow() {
+        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.availableReactionsDidLoad);
         super.onDetachedFromWindow();
     }
 

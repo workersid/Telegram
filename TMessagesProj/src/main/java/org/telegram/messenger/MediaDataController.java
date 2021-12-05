@@ -2118,7 +2118,7 @@ public class MediaDataController extends BaseController {
                 }
             }
             //todo какой тут флаг?
-        }, ConnectionsManager.RequestFlagInvokeAfter);
+        });
     }
 
     private void putAvailableReactionsToCache(TLRPC.TL_messages_availableReactions rpcReactions, boolean force) {

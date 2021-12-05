@@ -26,6 +26,7 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
@@ -269,7 +270,7 @@ public class MenuReactionCounterView extends FrameLayout implements Notification
             if (tlMessageUserReaction != null) {
                 TLRPC.TL_availableReaction tlAvailableReaction = MediaDataController.getInstance(currentAccount).getAvailableReactionByName(tlMessageUserReaction.reaction);
                 if (tlAvailableReaction != null) {
-                    titleView.setText(ContactsController.formatName(users.get(0).first_name, users.get(0).last_name));
+                    titleView.setText(UserObject.getUserName(users.get(0)));
                     TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(tlAvailableReaction.static_icon.thumbs, 90);
                     ImageLocation imageLocation = ImageLocation.getForDocument(thumb, tlAvailableReaction.static_icon);
                     imageView.setVisibility(VISIBLE);

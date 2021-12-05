@@ -225,7 +225,7 @@ public class UserReactionsListWithTabs extends LinearLayout implements Notificat
 
             @Override
             public boolean isEnabled(RecyclerView.ViewHolder holder) {
-                return false;
+                return true;
             }
 
             @NonNull
@@ -233,7 +233,9 @@ public class UserReactionsListWithTabs extends LinearLayout implements Notificat
             public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
                 EmotionCell cell = new EmotionCell(parent.getContext());
                 cell.setLayoutParams(new RecyclerView.LayoutParams(LayoutHelper.WRAP_CONTENT, AndroidUtilities.dp(42)));
-                return new RecyclerListView.Holder(cell);
+                RecyclerListView.Holder holder = new RecyclerListView.Holder(cell);
+                holder.itemView.setOnClickListener(v -> viewPager.setCurrentItem(holder.getAdapterPosition()));
+                return holder;
             }
 
             @Override
@@ -248,9 +250,6 @@ public class UserReactionsListWithTabs extends LinearLayout implements Notificat
             public int getItemCount() {
                 return emotionTabList.size();
             }
-        });
-        tabsListView.setOnItemClickListener((view, position) -> {
-            viewPager.setCurrentItem(position);
         });
 
         Drawable headerShadowDrawable = ContextCompat.getDrawable(context, R.drawable.header_shadow).mutate();

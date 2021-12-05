@@ -2,7 +2,6 @@ package org.telegram.ui.Components.reaction;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.animation.LayoutTransition;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -13,6 +12,7 @@ import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.view.Gravity;
 import android.view.animation.AccelerateInterpolator;
 import android.widget.LinearLayout;
@@ -28,9 +28,9 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AvatarsImageView;
 import org.telegram.ui.Components.BackupImageView;
-import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 
 import java.util.ArrayList;
@@ -71,13 +71,15 @@ public class EmotionCell extends LinearLayout {
         numberTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
         numberTextView.setTextColor(0xFF378DD1);
         addView(numberTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, 6, 0, 0, 0));
-        numberTextView.setOnTouchListener((v, event) -> true);
 
         avatarsImageView = new AvatarsImageView(context, false);
         avatarsImageView.setStyle(AvatarsImageView.STYLE_MESSAGE_SEEN);
         addView(avatarsImageView, LayoutHelper.createLinear(24 + 12 + 12 + 8, LayoutHelper.MATCH_PARENT, Gravity.CENTER_VERTICAL, 4, 0, 0, 0));
-
         setWillNotDraw(false);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            setForeground(Theme.createRadSelectorDrawable(Theme.getColor(Theme.key_dialogButtonSelector), AndroidUtilities.dp(24), AndroidUtilities.dp(24)));
+        }
         //setLayoutTransition(new LayoutTransition());
     }
 
@@ -236,5 +238,11 @@ public class EmotionCell extends LinearLayout {
         }
         canvas.clipPath(bgClipPath);
         super.onDraw(canvas);
+    }
+
+    @Override
+    public void onDrawForeground(Canvas canvas) {
+        canvas.clipPath(bgClipPath);
+        super.onDrawForeground(canvas);
     }
 }

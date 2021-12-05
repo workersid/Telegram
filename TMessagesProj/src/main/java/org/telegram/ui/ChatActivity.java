@@ -15088,6 +15088,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         chatAdapter.updateRowWithMessageObject(messageObject, true);
                     }
                 }
+                getNotificationCenter().postNotificationName(NotificationCenter.didAfterUpdateReactions, did, msgId);
             }
         } else if (id == NotificationCenter.didVerifyMessagesStickers) {
             ArrayList<TLRPC.Message> messages = (ArrayList<TLRPC.Message>) args[0];

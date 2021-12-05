@@ -2096,7 +2096,8 @@ public class MediaDataController extends BaseController {
             if (Math.abs((System.currentTimeMillis() / 1000) - date) >= 60 * 60 || force) {
                 //модуль для защиты от смены времени на телефоне юзером
                 //проверять обновления не чаще 1 раза в час
-                downloadAvailableReactions(rpcReactions.hash);
+                //не будем пока рисковать с хэшем, полностью перезапросим
+                downloadAvailableReactions(0);
             }
         }
     }
@@ -2117,7 +2118,6 @@ public class MediaDataController extends BaseController {
                     putAvailableReactionsToDb(rpcAvailableReactions, (int) (System.currentTimeMillis() / 1000L));
                 }
             }
-            //todo какой тут флаг?
         });
     }
 

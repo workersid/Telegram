@@ -53,6 +53,7 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
     private boolean isChatDialog = false;
     private final HashSet<String> adminsReactions = new HashSet<>();
     private int containerMaxWidth = 0;
+    private MessageObject currentMessageObject;
 
     public ChooseReactionLayout(@NonNull Context context, MessageObject messageObject) {
         super(context);
@@ -64,6 +65,7 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
     }
 
     private void init(Context context, MessageObject messageObject) {
+        currentMessageObject = messageObject;
         isChatDialog = DialogObject.isChatDialog(messageObject.getDialogId());
         if (isChatDialog) {
             TLRPC.ChatFull chatFull = MessagesController.getInstance(currentAccount).getChatFull(messageObject.getChatId());
@@ -154,17 +156,31 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
         if (id == NotificationCenter.availableReactionsDidLoad) {
             updateData();
         }
+
+        if (id == NotificationCenter.chatInfoDidLoad && currentMessageObject != null) {
+            TLRPC.ChatFull tmpChatFull = (TLRPC.ChatFull) args[0];
+            if (isChatDialog && tmpChatFull.id == currentMessageObject.getChatId()) {
+                TLRPC.ChatFull chatFull = MessagesController.getInstance(currentAccount).getChatFull(currentMessageObject.getChatId());
+                if (chatFull != null) {
+                    adminsReactions.clear();
+                    adminsReactions.addAll(chatFull.available_reactions);
+                    updateData();
+                }
+            }
+        }
     }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.availableReactionsDidLoad);
+        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.chatInfoDidLoad);
     }
 
     @Override
     protected void onDetachedFromWindow() {
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.availableReactionsDidLoad);
+        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.chatInfoDidLoad);
         super.onDetachedFromWindow();
     }
 

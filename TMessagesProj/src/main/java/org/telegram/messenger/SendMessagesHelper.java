@@ -2728,7 +2728,14 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 getMessagesController().processUpdates((TLRPC.Updates) response, false);
             }
             if (error != null && chatId != 0) {
-                AndroidUtilities.runOnUIThread(() -> getMessagesController().loadFullChat(chatId, 0, true), 1000);
+                AndroidUtilities.runOnUIThread(() -> {
+                    if (error.text != null) {
+                        if (error.text.contains("REACTION_INVALID")) {
+                            AlertsCreator.showSimpleToast(null, "Reaction was prohibited.");
+                        }
+                    }
+                });
+                AndroidUtilities.runOnUIThread(() -> getMessagesController().loadFullChat(chatId, 0, true), 500);
             }
         });
     }

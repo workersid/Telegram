@@ -23,6 +23,7 @@ import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
+import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.ConnectionsManager;
@@ -37,7 +38,7 @@ import org.telegram.ui.Components.LayoutHelper;
 import java.util.ArrayList;
 
 @SuppressLint("ViewConstructor")
-public class MenuReactionCounterView extends FrameLayout {
+public class MenuReactionCounterView extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
 
     private final ArrayList<TLRPC.User> users = new ArrayList<>();
     private final AvatarsImageView avatarsImageView;
@@ -62,13 +63,7 @@ public class MenuReactionCounterView extends FrameLayout {
         isOut = selectedObject.isOutOwner();
         this.selectedObject = selectedObject;
 
-        if (selectedObject.messageOwner.reactions != null && !selectedObject.messageOwner.reactions.results.isEmpty()) {
-            int counter = 0;
-            for (TLRPC.TL_reactionCount result : selectedObject.messageOwner.reactions.results) {
-                counter += result.count;
-            }
-            totalReactions = counter;
-        }
+        totalReactions = EmotionUtils.extractTotalReactions(selectedObject, null);
 
         flickerLoadingView = new FlickerLoadingView(context);
         flickerLoadingView.setColors(Theme.key_actionBarDefaultSubmenuBackground, Theme.key_listSelector, null);
@@ -138,6 +133,9 @@ public class MenuReactionCounterView extends FrameLayout {
     }
 
     public int getTotalSeen() {
+        if (totalReactions > totalSeen) {
+            return totalReactions;
+        }
         return totalSeen;
     }
 
@@ -150,18 +148,35 @@ public class MenuReactionCounterView extends FrameLayout {
     }
 
     @Override
+    public void didReceivedNotification(int id, int account, Object... args) {
+        if (selectedObject == null) return;
+
+        if (id == NotificationCenter.didAfterUpdateReactions) {
+            long did = (Long) args[0];
+            if (did == selectedObject.getDialogId()) {
+                int msgId = (Integer) args[1];
+                if (selectedObject.getId() == msgId) {
+                    totalReactions = EmotionUtils.extractTotalReactions(selectedObject, null);
+                    loadData(selectedObject);
+                }
+            }
+        }
+    }
+
+    @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        //todo подписаться на обновление fullChat и обновление реакций для сообщения
-        //todo заглушку добавить для юзеров которых сейчас нет локально
+        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.didAfterUpdateReactions);
     }
 
     @Override
     protected void onDetachedFromWindow() {
+        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.didAfterUpdateReactions);
         super.onDetachedFromWindow();
     }
 
     private void loadData(MessageObject selectedObject) {
+        if (selectedObject == null) return;
         final TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(selectedObject.getChatId());
 
         TLRPC.TL_messageReactions tlMessageReactions = selectedObject.messageOwner.reactions;
@@ -180,7 +195,8 @@ public class MenuReactionCounterView extends FrameLayout {
         }
 
         if (unknownUsers.isEmpty()) {
-            users.addAll(usersLocal);
+            this.users.clear();
+            this.users.addAll(usersLocal);
             if (isOut) {
                 loadSeenCount();
             } else {
@@ -270,7 +286,11 @@ public class MenuReactionCounterView extends FrameLayout {
             iconView.setVisibility(VISIBLE);
             if (isOut && totalSeen > 0) {
                 //от меня
-                titleView.setText(totalReactions + "/" + totalSeen + " Reacted");
+                if (totalReactions > totalSeen) {
+                    titleView.setText(totalReactions + "/" + totalReactions + " Reacted");
+                } else {
+                    titleView.setText(totalReactions + "/" + totalSeen + " Reacted");
+                }
             } else {
                 if (totalReactions == 1) {
                     titleView.setText(totalReactions + " reaction");

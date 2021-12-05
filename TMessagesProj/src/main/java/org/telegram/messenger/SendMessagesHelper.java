@@ -2722,11 +2722,14 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             req.reaction = reaction;
             req.flags |= 1;
         }
+        final long chatId = messageObject.getChatId();
         getConnectionsManager().sendRequest(req, (response, error) -> {
             if (response != null) {
                 getMessagesController().processUpdates((TLRPC.Updates) response, false);
             }
-            //todo Обработка ошибок
+            if (error != null && chatId != 0) {
+                AndroidUtilities.runOnUIThread(() -> getMessagesController().loadFullChat(chatId, 0, true), 1000);
+            }
         });
     }
 

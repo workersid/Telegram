@@ -133,7 +133,7 @@ public class MenuReactionCounterView extends FrameLayout implements Notification
     }
 
     public int getTotalSeen() {
-        if (totalReactions > totalSeen) {
+        if (isOut && totalReactions > totalSeen) {
             return totalReactions;
         }
         return totalSeen;

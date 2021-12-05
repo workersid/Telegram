@@ -32,15 +32,31 @@ public class FullScreenReactionStickerCell extends FrameLayout {
     private Object parentObject;
     private static final AccelerateInterpolator interpolator = new AccelerateInterpolator(0.5f);
     private Handler handler;
-    /*private Runnable checkerRunnable = new Runnable() {
+    private int lastFrame = 0;
+    private boolean mIsEffect;
+    private final Runnable checkerRunnable = new Runnable() {
         @Override
         public void run() {
-            if(isReadyAnimation()){
-
+            try {
+                if (mIsEffect) {
+                    //мегахак для защиты от застывания
+                    if (isReadyAnimation()) {
+                        int frame = imageView.getImageReceiver().getLottieAnimation().getCurrentFrame();
+                        if (frame > 5) {
+                            if (lastFrame == frame) {
+                                runFinishAnimation();
+                                return;
+                            }
+                            lastFrame = frame;
+                        }
+                    }
+                    handler.postDelayed(checkerRunnable, 350);
+                }
+            } catch (Exception e) {
+                //пожарный
             }
-            handler.postDelayed(checkerRunnable, 350);
         }
-    };*/
+    };
     private Runnable mFinishCallback;
 
     public FullScreenReactionStickerCell(Context context) {
@@ -64,6 +80,7 @@ public class FullScreenReactionStickerCell extends FrameLayout {
         if (document != null) {
             parentObject = parent;
             sticker = document;
+            mIsEffect = isEffect;
             if (!isEffect) {
                 imageView.setSize(size, size);
             } else {
@@ -86,7 +103,7 @@ public class FullScreenReactionStickerCell extends FrameLayout {
                 imageView.getImageReceiver().setDelegate((imageReceiver, set, thumb1, memCache) -> {
                     imageReceiver.getLottieAnimation().setOnFinishCallback(() -> {
                         runFinishAnimation();
-                    }, imageReceiver.getLottieAnimation().getFramesCount() - 5);//нельзя расчитывать именно на последний кадр, он может не отрендарится из-за троттлинга
+                    }, imageReceiver.getLottieAnimation().getFramesCount() - 4);//нельзя расчитывать именно на последний кадр, он может не отрендарится из-за троттлинга
                 });
             }
         }
@@ -122,7 +139,7 @@ public class FullScreenReactionStickerCell extends FrameLayout {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        //handler.postDelayed(checkerRunnable, 350);
+        handler.postDelayed(checkerRunnable, 350);
     }
 
     @Override

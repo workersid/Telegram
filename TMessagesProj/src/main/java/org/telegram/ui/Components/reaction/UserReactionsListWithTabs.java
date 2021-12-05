@@ -61,7 +61,9 @@ public class UserReactionsListWithTabs extends LinearLayout implements Notificat
         setOrientation(VERTICAL);
         currentMessageObject = selectedObject;
         totalSeen = seen;
-        resetMainData();
+        totalReactions = EmotionUtils.extractTotalReactions(currentMessageObject, null);
+        emotionTabList.clear();
+        emotionTabList.addAll(EmotionUtils.extractEmotionInfoList(currentMessageObject, MediaDataController.getInstance(currentAccount), false));
         isMoreThanTenReactionsWithDifferentTypes = EmotionUtils.isMoreThanTenReactionsWithDifferentTypes(selectedObject);
 
         for (int i = 0; i < emotionTabList.size(); i++) {
@@ -299,47 +301,18 @@ public class UserReactionsListWithTabs extends LinearLayout implements Notificat
         addView(viewPagerContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
     }
 
-    private void resetMainData() {
-        //нужно оставлять выбранную позицию
-        String selectedReaction = null;
-        for (int i = 0; i < emotionTabList.size(); i++) {
-            EmotionInfo info = emotionTabList.get(i);
-            if (info.isSelectedByCurrentUser) {
-                selectedReaction = info.reaction;
-                break;
-            }
-        }
-        totalReactions = EmotionUtils.extractTotalReactions(currentMessageObject, null);
-        emotionTabList.clear();
-        emotionTabList.addAll(EmotionUtils.extractEmotionInfoList(currentMessageObject, MediaDataController.getInstance(currentAccount), false));
-        for (int i = 0; i < emotionTabList.size(); i++) {
-            EmotionInfo info = emotionTabList.get(i);
-            if (info.reaction == null && selectedReaction == null) {
-                info.isSelectedByCurrentUser = true;
-                break;
-            }
-            if (selectedReaction != null && info.reaction != null) {
-                if (selectedReaction.equals(info.reaction)) {
-                    info.isSelectedByCurrentUser = true;
-                    break;
-                }
-            }
-        }
-    }
-
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
         if (tabsListAdapter == null || currentMessageObject == null) return;
         if (id == NotificationCenter.availableReactionsDidLoad) {
-            resetMainData();
-        }
-
-        if (id == NotificationCenter.didAfterUpdateReactions) {
-            long did = (Long) args[0];
-            if (did == currentMessageObject.getDialogId()) {
-                int msgId = (Integer) args[1];
-                if (currentMessageObject.getId() == msgId) {
-                    resetMainData();
+            for (int i = 0; i < emotionTabList.size(); i++) {
+                EmotionInfo info = emotionTabList.get(i);
+                if (info.reaction != null) {
+                    TLRPC.TL_availableReaction tlAvailableReaction = MediaDataController.getInstance(currentAccount).getAvailableReactionByName(info.reaction);
+                    if (tlAvailableReaction != null) {
+                        info.staticIcon = tlAvailableReaction.static_icon;
+                        info.selectIcon = tlAvailableReaction.select_animation;
+                    }
                 }
             }
         }
@@ -351,13 +324,11 @@ public class UserReactionsListWithTabs extends LinearLayout implements Notificat
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.availableReactionsDidLoad);
-        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.didAfterUpdateReactions);
     }
 
     @Override
     protected void onDetachedFromWindow() {
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.availableReactionsDidLoad);
-        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.didAfterUpdateReactions);
         super.onDetachedFromWindow();
     }
 

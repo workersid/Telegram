@@ -1376,7 +1376,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     View child2 = chatListView.getChildAt(ii);
                     if (child2 instanceof ChatMessageCell) {
                         ChatMessageCell cell2 = ((ChatMessageCell) child2);
-                        if (cell2.getMessageObject() != null && cell2.getMessageObject().hasReactions()) {
+                        if (cell2.getMessageObject() != null && cell2.getMessageObject().messageOwner.reactions != null) {
                             objects.add(cell2.getMessageObject());
                         }
                     }

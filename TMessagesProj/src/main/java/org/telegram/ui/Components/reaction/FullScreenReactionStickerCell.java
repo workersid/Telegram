@@ -34,6 +34,7 @@ public class FullScreenReactionStickerCell extends FrameLayout {
     private Handler handler;
     private int lastFrame = 0;
     private boolean mIsEffect;
+    private boolean isFinishRunning;
     private final Runnable checkerRunnable = new Runnable() {
         @Override
         public void run() {
@@ -42,13 +43,11 @@ public class FullScreenReactionStickerCell extends FrameLayout {
                     //мегахак для защиты от застывания
                     if (isReadyAnimation()) {
                         int frame = imageView.getImageReceiver().getLottieAnimation().getCurrentFrame();
-                        if (frame > 5) {
-                            if (lastFrame == frame) {
-                                runFinishAnimation();
-                                return;
-                            }
-                            lastFrame = frame;
+                        if (lastFrame > 0 && frame <= 0) {
+                            runFinishAnimation();
+                            return;
                         }
+                        lastFrame = frame;
                     }
                     handler.postDelayed(checkerRunnable, 350);
                 }
@@ -110,6 +109,8 @@ public class FullScreenReactionStickerCell extends FrameLayout {
     }
 
     private void runFinishAnimation() {
+        if (isFinishRunning) return;
+        isFinishRunning = true;
         final int bigSize = Math.min(AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y) / 2;
         final int smallSize = AndroidUtilities.dp(2);
         ValueAnimator anim = ValueAnimator.ofInt(bigSize, smallSize);

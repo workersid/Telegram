@@ -129,7 +129,7 @@ public class AdminReactionsActivity extends BaseFragment implements Notification
     private void checkChanges() {
         final TLRPC.ChatFull chatFull = getMessagesController().getChatFull(AdminReactionsActivity.this.id);
 
-        if (chatFull != null) {
+        if (chatFull != null && !isLoading) {
             boolean haveChanges = false;
             final ArrayList<String> chatAvailableReactions = chatFull.available_reactions;
             if (chatAvailableReactions.isEmpty() && isEnabledReactions) {

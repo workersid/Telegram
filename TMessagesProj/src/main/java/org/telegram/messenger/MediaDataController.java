@@ -2146,7 +2146,7 @@ public class MediaDataController extends BaseController {
         if (rpcReactions == null) return;
         getMessagesStorage().getStorageQueue().postRunnable(() -> {
             try {
-                SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO stickers_dice VALUES(?, ?, ?)");
+                SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO available_reactions VALUES(?, ?, ?)");
                 state.requery();
                 NativeByteBuffer data = new NativeByteBuffer(rpcReactions.getObjectSize());
                 rpcReactions.serializeToStream(data);

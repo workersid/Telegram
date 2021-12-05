@@ -21,9 +21,11 @@ import android.widget.LinearLayout;
 import androidx.core.content.ContextCompat;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.tgnet.TLRPC;
@@ -36,6 +38,8 @@ import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.ProfileActivity;
+
+import java.util.List;
 
 public class ReactionsFactory {
     public interface ReactionsCounterDelegate {
@@ -64,8 +68,14 @@ public class ReactionsFactory {
         void deleteReactionsUsersPopupWindowLink();
     }
 
-    public static ChooseReactionLayout createChooseReactionLayout(LinearLayout parent, MessageObject object, MessageObject.GroupedMessages groupedMessages) {
+    public static ChooseReactionLayout createChooseReactionLayout(LinearLayout parent, MessageObject object, MessageObject.GroupedMessages groupedMessages, MediaDataController mediaDataController, MessagesController messagesController) {
+        if (mediaDataController == null || object == null) return null;
         object = EmotionUtils.getMessageObjectForReactions(object, groupedMessages);
+
+        if (mediaDataController.getAvailableReactionsCount() == 0) {
+            return null;
+        }
+
         ChooseReactionLayout view = new ChooseReactionLayout(parent.getContext(), object);
         parent.addView(view, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, 0, 0, -16));
         return view;

@@ -141,7 +141,11 @@ public class UserReactionsList extends FrameLayout {
                     UserInfoHolder infoHolder = allUsers.get(position);
                     if (infoHolder.hasReaction && infoHolder.reaction != null) {
                         TLRPC.TL_availableReaction tlAvailableReaction = MediaDataController.getInstance(currentAccount).getAvailableReactionByName(infoHolder.reaction);
-                        cell.setUser(infoHolder, tlAvailableReaction.static_icon);
+                        if (tlAvailableReaction != null) {
+                            cell.setUser(infoHolder, tlAvailableReaction.static_icon);
+                        } else {
+                            cell.setUser(infoHolder, null);
+                        }
                     } else {
                         cell.setUser(infoHolder, null);
                     }

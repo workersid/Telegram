@@ -175,7 +175,6 @@ public class EmotionsInChatMessage {
         for (int i = 0; i < emotionInfoList.size(); i++) {
             EmotionInfo emotionInfo = emotionInfoList.get(i);
             if (i < iconImages.length) {
-                //todo emotionInfo.staticIcon null почему??
                 if (emotionInfo.staticIcon != null) {
                     TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(emotionInfo.staticIcon.thumbs, 90);
                     SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(emotionInfo.staticIcon, Theme.key_windowBackgroundGray, 1.0f);

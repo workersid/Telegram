@@ -6066,11 +6066,20 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 }
             }
 
+            int fixGroupWidth = 0;
+            if (groupedMessages != null) {
+                //getParentWidth()
+                fixGroupWidth = AndroidUtilities.displaySize.x - AndroidUtilities.dp(80);
+                if (isAvatarVisible) {
+                    fixGroupWidth -= AndroidUtilities.dp(80);
+                }
+            }
+
             //отступ даем последней картинке
             if (needReactions && (currentPosition == null || ((currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_RIGHT) != 0 && currentPosition.last))) {
                 if (isReactionsInBalloon) {
                     //reactionHeight только для тех сообщений где расположение в сообщение
-                    int tmp = emotionsInChatMessage.getSpaceHeight(getBackgroundDrawableRight() - getBackgroundDrawableLeft());
+                    int tmp = emotionsInChatMessage.getSpaceHeight(fixGroupWidth == 0 ? getBackgroundDrawableRight() - getBackgroundDrawableLeft() : fixGroupWidth);
 
                     if (tmp != 0) {
                         reactionHeight = tmp + AndroidUtilities.dp(16);//отступ для времени
@@ -6081,7 +6090,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 } else {
                     emotionsInChatMessage.setButtonStyleTransparent();
                     reactionHeight = 0;
-                    subtractReactionBackgroundHeight = emotionsInChatMessage.getSpaceHeight(getBackgroundDrawableRight() - getBackgroundDrawableLeft());
+                    subtractReactionBackgroundHeight = emotionsInChatMessage.getSpaceHeight(fixGroupWidth == 0 ? getBackgroundDrawableRight() - getBackgroundDrawableLeft() : fixGroupWidth);
                 }
             } else {
                 reactionHeight = 0;
@@ -6089,7 +6098,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
 
             if (needReactions && drawCommentButton && groupedMessages != null && captionLayout != null) {
-                reactionHeightForGroupWithComment = emotionsInChatMessage.getSpaceHeight(getBackgroundDrawableRight() - getBackgroundDrawableLeft()) + AndroidUtilities.dp(16);
+                reactionHeightForGroupWithComment = emotionsInChatMessage.getSpaceHeight(fixGroupWidth == 0 ? getBackgroundDrawableRight() - getBackgroundDrawableLeft() : fixGroupWidth) + AndroidUtilities.dp(16);
             } else {
                 reactionHeightForGroupWithComment = 0;
             }

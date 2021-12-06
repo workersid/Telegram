@@ -8468,30 +8468,54 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     private HashSet<Integer> lastUpdatedReactions = new HashSet<>();
+    private HashSet<Integer> futureUpdatedReactions = new HashSet<>();
 
     public void updateReactionsNow(ArrayList<MessageObject> visibleObjects) {
         if (visibleObjects == null || visibleObjects.isEmpty()) return;
-        final ArrayList<Integer> ids = new ArrayList<>();
+        final HashSet<Integer> ids = new HashSet<>();
         for (MessageObject object : visibleObjects) {
             if (!lastUpdatedReactions.contains(object.getId())) {
                 ids.add(object.getId());
             }
         }
 
-        if(ids.isEmpty()) return;
+        for (Integer futureId : futureUpdatedReactions) {
+            if (!lastUpdatedReactions.contains(futureId)) {
+                ids.add(futureId);
+            }
+        }
+
+        if (ids.isEmpty()) return;
 
         lastUpdatedReactions.addAll(ids);
 
         TLRPC.TL_messages_getMessagesReactions req = new TLRPC.TL_messages_getMessagesReactions();
         req.peer = getInputPeer(visibleObjects.get(0).getDialogId());
-        req.id = ids;
+        req.id = new ArrayList<>(ids);
         getConnectionsManager().sendRequest(req, (response, error) -> {
             if (error == null) {
                 TLRPC.Updates updates = (TLRPC.Updates) response;
                 processUpdates(updates, false);
             }
-            lastUpdatedReactions.removeAll(ids);
+            AndroidUtilities.runOnUIThread(() -> {
+                lastUpdatedReactions.removeAll(ids);
+                futureUpdatedReactions.removeAll(ids);
+            });
         });
+    }
+
+    public void cleanAllUpdateReactions() {
+        lastUpdatedReactions.clear();
+        futureUpdatedReactions.clear();
+    }
+
+    public void addToUpdateReactionsQueue(ArrayList<MessageObject> visibleObjects) {
+        if (visibleObjects == null || visibleObjects.isEmpty()) return;
+        final ArrayList<Integer> ids = new ArrayList<>();
+        for (MessageObject object : visibleObjects) {
+            ids.add(object.getId());
+        }
+        futureUpdatedReactions.addAll(ids);
     }
 
     public void addToPollsQueue(long dialogId, ArrayList<MessageObject> visibleObjects) {

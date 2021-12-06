@@ -458,7 +458,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private int scrollToOffsetOnRecreate = 0;
 
     private ArrayList<MessageObject> pollsToCheck = new ArrayList<>(10);
-
+    private ArrayList<MessageObject> futureReactionsToCheck = new ArrayList<>(10);
     private int editTextStart;
     private int editTextEnd;
 
@@ -1376,14 +1376,14 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     View child2 = chatListView.getChildAt(ii);
                     if (child2 instanceof ChatMessageCell) {
                         ChatMessageCell cell2 = ((ChatMessageCell) child2);
-                        if (cell2.getMessageObject() != null && cell2.getMessageObject().messageOwner.reactions != null) {
+                        if (cell2.getMessageObject() != null && cell2.getMessageObject().isSent() && cell2.getMessageObject().messageOwner.reactions != null) {
                             objects.add(cell2.getMessageObject());
                         }
                     }
                 }
                 getMessagesController().updateReactionsNow(objects);
             }
-            checkReactionsHandler.postDelayed(() -> checkReactionsRunnable.run(), 6001);
+            checkReactionsHandler.postDelayed(() -> checkReactionsRunnable.run(), 7001);
         }
     };
 
@@ -11247,6 +11247,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         int maxUnreadDate = Integer.MIN_VALUE;
         int recyclerChatViewHeight = (contentView.getHeightWithKeyboard() - (inPreviewMode ? 0 : AndroidUtilities.dp(48)) - chatListView.getTop());
         pollsToCheck.clear();
+        futureReactionsToCheck.clear();
         float cilpTop = chatListViewPaddingTop;
         for (int a = 0; a < count; a++) {
             View view = chatListView.getChildAt(a);
@@ -11330,6 +11331,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 if (messageObject.type == MessageObject.TYPE_POLL && messageObject.getId() > 0) {
                     pollsToCheck.add(messageObject);
                 }
+                if (messageObject.getId() > 0 && messageObject.messageOwner.reactions != null) {
+                    futureReactionsToCheck.add(messageObject);
+                }
             }
             if (bottom <= cilpTop) {
                 if (view instanceof ChatActionCell && messageObject.isDateObject) {
@@ -11392,6 +11396,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 loadingPinnedMessagesList = true;
             }
         }
+        getMessagesController().addToUpdateReactionsQueue(futureReactionsToCheck);
         getMessagesController().addToPollsQueue(dialog_id, pollsToCheck);
         if (videoPlayerContainer != null) {
             if (!foundTextureViewMessage) {
@@ -18987,7 +18992,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         super.onPause();
         doubleClickHandler.removeCallbacksAndMessages(null);
         checkReactionsHandler.removeCallbacksAndMessages(null);
-
+        getMessagesController().cleanAllUpdateReactions();
         if (reactionsUsersForSingleReactionPopupWindow != null) {
             reactionsUsersForSingleReactionPopupWindow.dismiss();
         }

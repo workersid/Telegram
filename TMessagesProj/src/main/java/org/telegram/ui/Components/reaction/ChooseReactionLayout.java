@@ -1,6 +1,7 @@
 package org.telegram.ui.Components.reaction;
 
 import android.animation.LayoutTransition;
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -11,6 +12,8 @@ import android.graphics.RectF;
 import android.os.Build;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.AccelerateInterpolator;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
@@ -54,6 +57,7 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
     private final HashSet<String> adminsReactions = new HashSet<>();
     private int containerMaxWidth = 0;
     private MessageObject currentMessageObject;
+    private static final AccelerateInterpolator interpolator = new AccelerateInterpolator(0.5f);
 
     public ChooseReactionLayout(@NonNull Context context, MessageObject messageObject) {
         super(context);
@@ -149,6 +153,26 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
         getLayoutParams().width = containerMaxWidth;
         listView.setVisibility(VISIBLE);
         updateData();
+
+        final int startAnimWidth = getLayoutParams().width;
+        final int startAnimMargin = ((MarginLayoutParams) getLayoutParams()).leftMargin;
+
+        getLayoutParams().width = 0;
+        ((MarginLayoutParams) getLayoutParams()).leftMargin = 0;
+
+        postDelayed(() -> {
+            ValueAnimator anim = ValueAnimator.ofInt(0, startAnimWidth);
+            anim.addUpdateListener(valueAnimator -> {
+                int val = (int) valueAnimator.getAnimatedValue();
+                MarginLayoutParams layoutParams = (MarginLayoutParams) getLayoutParams();
+                layoutParams.width = val;
+                layoutParams.leftMargin = startAnimMargin + startAnimWidth - val;
+                setLayoutParams(layoutParams);
+            });
+            anim.setInterpolator(interpolator);
+            anim.setDuration(100);
+            anim.start();
+        }, 100);
     }
 
     @Override

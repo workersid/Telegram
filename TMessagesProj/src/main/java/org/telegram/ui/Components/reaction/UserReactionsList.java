@@ -170,7 +170,11 @@ public class UserReactionsList extends FrameLayout {
         });
         usersListView.setOnItemClickListener((view, position) -> {
             if (delegate != null) {
-                delegate.onItemClick(allUsers.get(position).user);
+                try {
+                    delegate.onItemClick(allUsers.get(position).user);
+                } catch (Exception e) {
+
+                }
             }
         });
 

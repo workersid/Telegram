@@ -9,7 +9,6 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Handler;
 import android.os.Looper;
-import android.view.animation.AccelerateInterpolator;
 import android.widget.FrameLayout;
 
 import org.telegram.messenger.AndroidUtilities;
@@ -36,22 +35,21 @@ public class FullScreenReactionStickerCell extends FrameLayout {
     private final BackupImageView imageView;
     private TLRPC.Document sticker;
     private Object parentObject;
-    private static final AccelerateInterpolator interpolator = new AccelerateInterpolator(0.5f);
     private Handler handler;
     private int lastFrame = 0;
     private boolean mIsEffect;
-    private boolean isFinishRunning;
     private boolean isUserDialog;
     private final Runnable checkerRunnable = new Runnable() {
         @Override
         public void run() {
             try {
-                if (mIsEffect) {
+                if (!mIsEffect) {
                     //мегахак для защиты от застывания
                     if (isReadyAnimation()) {
                         int frame = imageView.getImageReceiver().getLottieAnimation().getCurrentFrame();
                         if (lastFrame > 0 && frame <= 0) {
                             runFinishAnimation();
+                            handler.postDelayed(checkerRunnable, 450);
                             return;
                         }
                         lastFrame = frame;
@@ -123,15 +121,14 @@ public class FullScreenReactionStickerCell extends FrameLayout {
                 imageView.getImageReceiver().setDelegate((imageReceiver, set, thumb1, memCache) -> {
                     imageReceiver.getLottieAnimation().setOnFinishCallback(() -> {
                         runFinishAnimation();
-                    }, imageReceiver.getLottieAnimation().getFramesCount() - 4);//нельзя расчитывать именно на последний кадр, он может не отрендарится из-за троттлинга
+                    }, imageReceiver.getLottieAnimation().getFramesCount() - 1);
                 });
+                handler.postDelayed(checkerRunnable, 350);
             }
         }
     }
 
     private void runFinishAnimation() {
-        if (isFinishRunning) return;
-        isFinishRunning = true;
         final int bigSize = Math.min(AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y) / 2;
         final int smallSize;
 
@@ -197,6 +194,12 @@ public class FullScreenReactionStickerCell extends FrameLayout {
                 super.onAnimationCancel(animation);
                 if (mFinishCallback != null) mFinishCallback.run();
             }
+
+            @Override
+            public void onAnimationStart(Animator animation) {
+                super.onAnimationStart(animation);
+                handler.removeCallbacks(checkerRunnable);
+            }
         });
 
         endAnimatorSet.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
@@ -208,7 +211,6 @@ public class FullScreenReactionStickerCell extends FrameLayout {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        handler.postDelayed(checkerRunnable, 350);
     }
 
     @Override

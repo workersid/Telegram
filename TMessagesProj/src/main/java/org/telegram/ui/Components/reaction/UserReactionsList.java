@@ -273,6 +273,8 @@ public class UserReactionsList extends FrameLayout {
                         }
                         finishLoading(false);
                     } else {
+                        loadNextReactionsId = END_FLAG;
+                        totalReactions = this.allUsers.size();
                         finishLoading(true);
                     }
                 }));
@@ -326,6 +328,7 @@ public class UserReactionsList extends FrameLayout {
                                     totalSeen = this.allUsers.size() - totalReactions;
                                     finishLoading(false);
                                 } else {
+                                    loadNextSeenId = END_FLAG;
                                     finishLoading(true);
                                 }
                             }));
@@ -349,11 +352,13 @@ public class UserReactionsList extends FrameLayout {
                                     totalSeen = this.allUsers.size() - totalReactions;
                                     finishLoading(false);
                                 } else {
+                                    loadNextSeenId = END_FLAG;
                                     finishLoading(true);
                                 }
                             }));
                         }
                     } else {
+                        loadNextSeenId = END_FLAG;
                         finishLoading(true);
                     }
                 }));

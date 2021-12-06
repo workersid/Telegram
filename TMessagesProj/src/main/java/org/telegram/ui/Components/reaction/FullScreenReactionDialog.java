@@ -83,7 +83,7 @@ public class FullScreenReactionDialog extends Dialog {
                                 EmotionInfo emotionInfo = emotionInfoList.get(a);
                                 if (emotionInfo.reaction != null && emotionInfo.reaction.equals(reaction.reaction)) {
                                     int x = (int) (emotionInfo.emotionRegion.left);
-                                    int y = (int) (emotionInfo.emotionRegion.bottom + cell.getTop() + cell.getBackgroundDrawableTop() + AndroidUtilities.statusBarHeight) - chatEmojiViewPadding;
+                                    int y = (int) (emotionInfo.emotionRegion.top + cell.getTop() + cell.getBackgroundDrawableTop() + AndroidUtilities.statusBarHeight) - chatEmojiViewPadding + AndroidUtilities.dp(22);
                                     return new int[]{x, y};
                                 }
                             }

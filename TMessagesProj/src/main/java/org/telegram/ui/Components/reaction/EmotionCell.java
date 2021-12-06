@@ -78,7 +78,7 @@ public class EmotionCell extends LinearLayout {
         setWillNotDraw(false);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            setForeground(Theme.createRadSelectorDrawable(Theme.getColor(Theme.key_dialogButtonSelector), AndroidUtilities.dp(24), AndroidUtilities.dp(24)));
+            setForeground(Theme.createRadSelectorDrawable(0xff378DD1, AndroidUtilities.dp(24), AndroidUtilities.dp(24)));
         }
         //setLayoutTransition(new LayoutTransition());
     }

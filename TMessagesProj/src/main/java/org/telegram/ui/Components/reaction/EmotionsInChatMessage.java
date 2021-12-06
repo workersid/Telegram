@@ -187,6 +187,8 @@ public class EmotionsInChatMessage {
                     } else {
                         iconImages[i].setImage(ImageLocation.getForDocument(emotionInfo.staticIcon), "80_80", null, null, null, 0, null, messageObject, 0);
                     }
+                } else {
+                    iconImages[i].clearImage();
                 }
 
                 numberLayouts[i].setNumber(emotionInfo.count, false);

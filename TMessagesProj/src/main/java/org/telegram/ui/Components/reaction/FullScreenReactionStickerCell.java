@@ -202,8 +202,8 @@ public class FullScreenReactionStickerCell extends FrameLayout {
             }
         });
 
-        endAnimatorSet.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
-        endAnimatorSet.setDuration(400);
+        endAnimatorSet.setInterpolator(CubicBezierInterpolator.EASE_OUT);
+        endAnimatorSet.setDuration(250);
         endAnimatorSet.start();
         invalidate();
     }

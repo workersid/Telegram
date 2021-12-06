@@ -20403,7 +20403,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             if (scrimPopupWindow != null) {
                                 getSendMessagesHelper().sendReactionNew(selectedObject, reaction.reaction);
                                 scrimPopupWindow.dismiss();
-                                showDialog(new FullScreenReactionDialog(contentView.getContext(), reaction, x, y, chatListView, msgId, DialogObject.isUserDialog(selectedObject.getDialogId())));
+                                showDialog(new FullScreenReactionDialog(contentView.getContext(), reaction, x, y, chatListView, msgId, DialogObject.isUserDialog(selectedObject.getDialogId()), chatEmojiViewPadding));
                             }
                         }
                     });
@@ -23379,7 +23379,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     @Override
                     public void didPressEmotion(ChatMessageCell cell, EmotionInfo emotionInfo) {
                         if (emotionInfo == null || cell == null) return;
-                        FullScreenReactionDialog dialog = ReactionsFactory.setReaction(contentView.getContext(), cell, emotionInfo, getMediaDataController(), getSendMessagesHelper());
+                        FullScreenReactionDialog dialog = ReactionsFactory.setReaction(contentView.getContext(), cell, emotionInfo, getMediaDataController(), getSendMessagesHelper(), chatEmojiViewPadding);
                         if (dialog != null) {
                             showDialog(dialog);
                         }

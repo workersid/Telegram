@@ -46,14 +46,16 @@ public class FullScreenReactionDialog extends Dialog {
     private RecyclerListView listView;
     private int msgId;
     private boolean isUserDialog;
+    private int chatEmojiViewPadding;
 
-    public FullScreenReactionDialog(@NonNull Context context, TLRPC.TL_availableReaction reaction, int startAnimX, int startAnimY, RecyclerListView listView, int msgId, boolean isUserDialog) {
+    public FullScreenReactionDialog(@NonNull Context context, TLRPC.TL_availableReaction reaction, int startAnimX, int startAnimY, RecyclerListView listView, int msgId, boolean isUserDialog, int chatEmojiViewPadding) {
         super(context);
         this.startAnimX = startAnimX;
         this.startAnimY = startAnimY;
         this.listView = listView;
         this.msgId = msgId;
         this.isUserDialog = isUserDialog;
+        this.chatEmojiViewPadding = chatEmojiViewPadding;
         init(context, reaction);
     }
 
@@ -81,7 +83,7 @@ public class FullScreenReactionDialog extends Dialog {
                                 EmotionInfo emotionInfo = emotionInfoList.get(a);
                                 if (emotionInfo.reaction != null && emotionInfo.reaction.equals(reaction.reaction)) {
                                     int x = (int) (emotionInfo.emotionRegion.left);
-                                    int y = (int) (emotionInfo.emotionRegion.bottom + cell.getTop() + cell.getBackgroundDrawableTop() + AndroidUtilities.statusBarHeight);
+                                    int y = (int) (emotionInfo.emotionRegion.bottom + cell.getTop() + cell.getBackgroundDrawableTop() + AndroidUtilities.statusBarHeight) - chatEmojiViewPadding;
                                     return new int[]{x, y};
                                 }
                             }

@@ -29,6 +29,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
 
@@ -174,7 +175,7 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
                 layoutParams.leftMargin = startAnimMargin + startAnimWidth - val;
                 setLayoutParams(layoutParams);
             });
-            anim.setInterpolator(interpolator);
+            anim.setInterpolator(CubicBezierInterpolator.EASE_IN);
             anim.setDuration(100);
             anim.start();
         }, 100);

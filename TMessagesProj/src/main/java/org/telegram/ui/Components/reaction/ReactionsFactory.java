@@ -376,7 +376,7 @@ public class ReactionsFactory {
         linearLayout.animate().alpha(1f).scaleX(1f).scaleY(1f).setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT).setDuration(350);
     }
 
-    public static FullScreenReactionDialog setReaction(Context context, ChatMessageCell cell, EmotionInfo emotionInfo, MediaDataController mediaDataController, SendMessagesHelper sendMessagesHelper) {
+    public static FullScreenReactionDialog setReaction(Context context, ChatMessageCell cell, EmotionInfo emotionInfo, MediaDataController mediaDataController, SendMessagesHelper sendMessagesHelper, int chatEmojiViewPadding) {
         MessageObject o = EmotionUtils.getMessageObjectForReactions(cell.getMessageObject(), cell.getCurrentMessagesGroup());
         if (o != null) {
             if (o.hasReactions()) {
@@ -394,9 +394,9 @@ public class ReactionsFactory {
                 return new FullScreenReactionDialog(context,
                         tlAvailableReaction,
                         (int) emotionInfo.emotionRegion.left - AndroidUtilities.dp(6),
-                        (int) (emotionInfo.emotionRegion.top + cell.getTop() + cell.getBackgroundDrawableTop() + AndroidUtilities.statusBarHeight) + AndroidUtilities.dp(6),
+                        (int) (emotionInfo.emotionRegion.top + cell.getTop() + cell.getBackgroundDrawableTop() + AndroidUtilities.statusBarHeight) + AndroidUtilities.dp(6) - chatEmojiViewPadding,
                         (RecyclerListView) cell.getParent(),
-                        o.getId(), DialogObject.isUserDialog(o.getDialogId()));
+                        o.getId(), DialogObject.isUserDialog(o.getDialogId()), chatEmojiViewPadding);
             }
         }
         return null;

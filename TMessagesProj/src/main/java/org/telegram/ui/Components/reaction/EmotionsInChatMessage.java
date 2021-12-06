@@ -64,7 +64,7 @@ public class EmotionsInChatMessage {
     private final int oneRowHeight = AndroidUtilities.dp(30);
     private final int oneRowMarginVertical = AndroidUtilities.dp(4);
     private final int oneItemMarginHorizontal = AndroidUtilities.dp(4);
-    private final int oneItemMaxWidth = AndroidUtilities.dp(100);
+    private final int oneItemMaxWidth = AndroidUtilities.dp(94);
     private final int avatarSize = AndroidUtilities.dp(24);
     private final int iconSize = AndroidUtilities.dp(23);
     private final int halfAvatarPadding = AndroidUtilities.dp(2);

@@ -4633,6 +4633,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         }
                     }
                     ImageReceiver imageReceiver = chatMessageCell.getAvatarImage();
+                    int subtractReactionAvatarHeight = chatMessageCell.subtractReactionAvatarHeight;
                     if (imageReceiver != null) {
                         MessageObject.GroupedMessages groupedMessages = getValidGroupedMessage(message);
                         if (chatMessageCell.getMessageObject().deleted) {
@@ -4700,7 +4701,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         }
                         float tx = chatMessageCell.getSlidingOffsetX() + chatMessageCell.getCheckBoxTranslation();
 
-                        int y = (int) ((replaceAnimation ? child.getTop() : child.getY()) + chatMessageCell.getLayoutHeight() + chatMessageCell.getTransitionParams().deltaBottom);
+                        int y = (int) ((replaceAnimation ? child.getTop() : child.getY()) + chatMessageCell.getLayoutHeight() + subtractReactionAvatarHeight + chatMessageCell.getTransitionParams().deltaBottom);
                         int maxY = chatListView.getMeasuredHeight() - chatListView.getPaddingBottom();
                         if (chatMessageCell.isPlayingRound() || chatMessageCell.getTransitionParams().animatePlayingRound) {
                             if (chatMessageCell.getTransitionParams().animatePlayingRound) {

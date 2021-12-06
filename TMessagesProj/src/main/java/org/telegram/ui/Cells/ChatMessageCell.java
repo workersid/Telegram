@@ -351,6 +351,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private int reactionHeight;
     private int reactionHeightForGroupWithComment;
     private int subtractReactionBackgroundHeight;
+    public int subtractReactionAvatarHeight;
     private int linkBlockNum;
     private int linkSelectionBlockNum;
 
@@ -6102,6 +6103,12 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             } else {
                 reactionHeightForGroupWithComment = 0;
             }
+
+            if (isAvatarVisible && needReactions && !isReactionsInBalloon && groupedMessages == null) {
+                subtractReactionAvatarHeight = emotionsInChatMessage.getSpaceHeight(fixGroupWidth == 0 ? getBackgroundDrawableRight() - getBackgroundDrawableLeft() : fixGroupWidth);
+            } /* не работает с группами else if (isAvatarVisible && needReactions && isReactionsInBalloon && groupedMessages != null) {
+                subtractReactionAvatarHeight = emotionsInChatMessage.getSpaceHeight(fixGroupWidth == 0 ? getBackgroundDrawableRight() - getBackgroundDrawableLeft() : fixGroupWidth);
+            }*/
 
             if (drawCommentButton) {
                 totalHeight += AndroidUtilities.dp(shouldDrawTimeOnMedia() ? 41.3f : 43);

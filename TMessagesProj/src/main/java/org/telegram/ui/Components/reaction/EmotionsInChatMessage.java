@@ -75,6 +75,10 @@ public class EmotionsInChatMessage {
     private int buttonStyle = STYLE_BLUE;
     private final int iconSizeMini = AndroidUtilities.dp(14);
 
+    public List<EmotionInfo> getEmotionInfoList() {
+        return emotionInfoList;
+    }
+
     public void createForView(View parentView) {
         if (!isInitialized) {
             handler = new Handler(Looper.getMainLooper());
@@ -276,6 +280,7 @@ public class EmotionsInChatMessage {
                 iconImages[i].setImageX(startX + (i * AndroidUtilities.dp(16)));
                 iconImages[i].setImageY(startY);
                 iconImages[i].draw(canvas);
+                emotionInfoList.get(i).emotionRegion.set(iconImages[i].getImageX(), iconImages[i].getImageY(), iconImages[i].getImageX() + iconSizeMini, iconImages[i].getImageY() + iconSizeMini);
             }
             return;
         }
@@ -306,6 +311,7 @@ public class EmotionsInChatMessage {
                 iconImages[i].setImageX(offsetX);
                 iconImages[i].setImageY(offsetY + ((oneRowHeight + oneRowMarginVertical) - iconSize) / 2);
                 iconImages[i].draw(canvas);
+                emotionInfo.emotionRegion.set(iconImages[i].getImageX(), iconImages[i].getImageY(), iconImages[i].getImageX() + iconSize, iconImages[i].getImageY() + iconSize);
 
                 offsetX += iconImages[i].getImageWidth() + AndroidUtilities.dp(4);
 

@@ -2,9 +2,11 @@ package org.telegram.ui.Components.reaction;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.animation.AccelerateInterpolator;
@@ -27,6 +29,10 @@ import java.util.Random;
 @SuppressLint("ViewConstructor")
 public class FullScreenReactionStickerCell extends FrameLayout {
 
+    public interface Delegate {
+        int[] findFinisPosition();
+    }
+
     private final BackupImageView imageView;
     private TLRPC.Document sticker;
     private Object parentObject;
@@ -35,6 +41,7 @@ public class FullScreenReactionStickerCell extends FrameLayout {
     private int lastFrame = 0;
     private boolean mIsEffect;
     private boolean isFinishRunning;
+    private boolean isUserDialog;
     private final Runnable checkerRunnable = new Runnable() {
         @Override
         public void run() {
@@ -57,6 +64,8 @@ public class FullScreenReactionStickerCell extends FrameLayout {
         }
     };
     private Runnable mFinishCallback;
+    private AnimatorSet startAnimatorSet;
+    private Delegate delegate;
 
     public FullScreenReactionStickerCell(Context context) {
         super(context);
@@ -64,25 +73,37 @@ public class FullScreenReactionStickerCell extends FrameLayout {
         imageView.setAspectFit(true);
         imageView.setLayerNum(1);
         imageView.getImageReceiver().setAutoRepeat(3);
+        imageView.setLayerType(LAYER_TYPE_HARDWARE, null);
         addView(imageView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         setFocusable(true);
         handler = new Handler(Looper.getMainLooper());
     }
 
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY));
+    public void setDelegate(Delegate delegate) {
+        this.delegate = delegate;
     }
 
-    public void setSticker(TLRPC.Document document, Object parent, boolean isEffect, String key, final Runnable finishCallback) {
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        if (mIsEffect) {
+            super.onMeasure(MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY));
+        } else {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        }
+    }
+
+    public void setSticker(TLRPC.Document document, Object parent, boolean isEffect, String key, final Runnable finishCallback, boolean isUserDialog) {
+        this.isUserDialog = isUserDialog;
         int size = Math.min(AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y) / 2;
         if (document != null) {
             parentObject = parent;
             sticker = document;
             mIsEffect = isEffect;
             if (!isEffect) {
-                imageView.setSize(size, size);
+                imageView.setAspectFit(false);
+                imageView.setSize(AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y);
             } else {
+                imageView.setAspectFit(true);
                 int backgroundSize = Math.min(AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y);
                 imageView.setSize(backgroundSize, backgroundSize);
             }
@@ -112,14 +133,59 @@ public class FullScreenReactionStickerCell extends FrameLayout {
         if (isFinishRunning) return;
         isFinishRunning = true;
         final int bigSize = Math.min(AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y) / 2;
-        final int smallSize = AndroidUtilities.dp(2);
-        ValueAnimator anim = ValueAnimator.ofInt(bigSize, smallSize);
-        anim.addUpdateListener(animation -> {
+        final int smallSize;
+
+        if (isUserDialog) {
+            smallSize = AndroidUtilities.dp(14);
+        } else {
+            smallSize = AndroidUtilities.dp(23);
+        }
+
+        final int posX;
+        final int posY;
+        if (delegate != null) {
+            int[] pos = delegate.findFinisPosition();
+            posX = pos[0];
+            posY = pos[1];
+        } else {
+            posX = 0;
+            posY = 0;
+        }
+
+        AnimatorSet endAnimatorSet = new AnimatorSet();
+        ValueAnimator anim1 = ValueAnimator.ofInt(bigSize, smallSize);
+        anim1.addUpdateListener(animation -> {
             int val = (int) animation.getAnimatedValue();
-            imageView.setSize(val, val);
+
+            if (posX > 0 && posY > 0) {
+                imageView.getImageReceiver().setImageWidth(val);
+                imageView.getImageReceiver().setImageHeight(val);
+            } else {
+                imageView.getImageReceiver().setImageCoords((AndroidUtilities.displaySize.x - val) / 2, (AndroidUtilities.displaySize.y - val) / 2, val, val);
+            }
+
             imageView.invalidate();
         });
-        anim.addListener(new AnimatorListenerAdapter() {
+        ValueAnimator anim2 = ValueAnimator.ofInt((AndroidUtilities.displaySize.y - bigSize) / 2, posY);
+        anim2.addUpdateListener(animation -> {
+            int val = (int) animation.getAnimatedValue();
+            imageView.getImageReceiver().setImageY(val);
+            imageView.invalidate();
+        });
+        ValueAnimator anim3 = ValueAnimator.ofInt((AndroidUtilities.displaySize.x - bigSize) / 2, posX);
+        anim3.addUpdateListener(animation -> {
+            int val = (int) animation.getAnimatedValue();
+            imageView.getImageReceiver().setImageX(val);
+            imageView.invalidate();
+        });
+
+        if (posX > 0 && posY > 0) {
+            endAnimatorSet.playTogether(anim1, anim2, anim3);
+        } else {
+            endAnimatorSet.playTogether(anim1);
+        }
+
+        endAnimatorSet.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
                 super.onAnimationEnd(animation);
@@ -132,9 +198,11 @@ public class FullScreenReactionStickerCell extends FrameLayout {
                 if (mFinishCallback != null) mFinishCallback.run();
             }
         });
-        anim.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
-        anim.setDuration(400);
-        anim.start();
+
+        endAnimatorSet.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
+        endAnimatorSet.setDuration(400);
+        endAnimatorSet.start();
+        invalidate();
     }
 
     @Override
@@ -163,20 +231,59 @@ public class FullScreenReactionStickerCell extends FrameLayout {
         return false;
     }
 
-    public void startLaunchAnimation(final boolean move) {
+    public void startLaunchAnimation(final int posX, final int posY) {
         final int bigSize = Math.min(AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y) / 2;
-        final int smallSize = AndroidUtilities.dp(48);
-        if (move) {
-            ValueAnimator anim = ValueAnimator.ofInt(smallSize, bigSize);
-            anim.addUpdateListener(animation -> {
-                int val = (int) animation.getAnimatedValue();
-                imageView.setSize(val, val);
-                imageView.invalidate();
-            });
+        final int smallSize = AndroidUtilities.dp(40);
 
-            anim.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
-            anim.setDuration(500);
-            anim.start();
+        startAnimatorSet = new AnimatorSet();
+        imageView.ignoreSetCoords = true;
+        ValueAnimator anim1 = ValueAnimator.ofInt(smallSize, bigSize);
+        anim1.addUpdateListener(animation -> {
+            int val = (int) animation.getAnimatedValue();
+
+            if (posX > 0 && posY > 0) {
+                imageView.getImageReceiver().setImageWidth(val);
+                imageView.getImageReceiver().setImageHeight(val);
+            } else {
+                imageView.getImageReceiver().setImageCoords((AndroidUtilities.displaySize.x - val) / 2, (AndroidUtilities.displaySize.y - val) / 2, val, val);
+            }
+
+            imageView.invalidate();
+        });
+        ValueAnimator anim2 = ValueAnimator.ofInt(posY, (AndroidUtilities.displaySize.y - bigSize) / 2);
+        anim2.addUpdateListener(animation -> {
+            int val = (int) animation.getAnimatedValue();
+            imageView.getImageReceiver().setImageY(val);
+            imageView.invalidate();
+        });
+        ValueAnimator anim3 = ValueAnimator.ofInt(posX, (AndroidUtilities.displaySize.x - bigSize) / 2);
+        anim3.addUpdateListener(animation -> {
+            int val = (int) animation.getAnimatedValue();
+            imageView.getImageReceiver().setImageX(val);
+            imageView.invalidate();
+        });
+
+        if (posX > 0 && posY > 0) {
+            startAnimatorSet.playTogether(anim1, anim2, anim3);
+        } else {
+            startAnimatorSet.playTogether(anim1);
+        }
+
+        startAnimatorSet.setInterpolator(CubicBezierInterpolator.EASE_IN);
+        startAnimatorSet.setDuration(250);
+        startAnimatorSet.start();
+    }
+
+    @Override
+    protected void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        if (!mIsEffect) {
+            if (startAnimatorSet != null) {
+                startAnimatorSet.cancel();
+                startAnimatorSet = null;
+            }
+            final int bigSize = Math.min(AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y) / 2;
+            imageView.getImageReceiver().setImageCoords((AndroidUtilities.displaySize.x - bigSize) / 2, (AndroidUtilities.displaySize.y - bigSize) / 2, bigSize, bigSize);
         }
     }
 

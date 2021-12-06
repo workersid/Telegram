@@ -17,6 +17,7 @@ public class EmotionInfo {
     public int messageId;
     public long dialogId;
     public RectF drawRegion = new RectF();
+    public RectF emotionRegion = new RectF();
 
     public EmotionInfo copy() {
         EmotionInfo emotionInfo = new EmotionInfo();

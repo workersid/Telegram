@@ -1728,6 +1728,10 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
         imageW = width;
     }
 
+    public void setImageHeight(int height) {
+        imageH = height;
+    }
+
     public void setImageCoords(float x, float y, float width, float height) {
         imageX = x;
         imageY = y;

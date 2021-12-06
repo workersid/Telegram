@@ -3,7 +3,6 @@ package org.telegram.ui.Components.reaction;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.RectF;
@@ -37,9 +36,8 @@ import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.ProfileActivity;
-
-import java.util.List;
 
 public class ReactionsFactory {
     public interface ReactionsCounterDelegate {
@@ -392,8 +390,13 @@ public class ReactionsFactory {
             }
             sendMessagesHelper.sendReactionNew(o, emotionInfo.reaction);
             TLRPC.TL_availableReaction tlAvailableReaction = mediaDataController.getAvailableReactionByName(emotionInfo.reaction);
-            if (tlAvailableReaction != null) {
-                return new FullScreenReactionDialog(context, tlAvailableReaction);
+            if (tlAvailableReaction != null && cell.getParent() instanceof RecyclerListView) {
+                return new FullScreenReactionDialog(context,
+                        tlAvailableReaction,
+                        (int) emotionInfo.emotionRegion.left - AndroidUtilities.dp(6),
+                        (int) (emotionInfo.emotionRegion.top + cell.getTop() + cell.getBackgroundDrawableTop() + AndroidUtilities.statusBarHeight) + AndroidUtilities.dp(6),
+                        (RecyclerListView) cell.getParent(),
+                        o.getId(), DialogObject.isUserDialog(o.getDialogId()));
             }
         }
         return null;

@@ -9,15 +9,21 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 
+import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.R;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.RecyclerListView;
+
+import java.util.List;
 
 public class FullScreenReactionDialog extends Dialog {
     private FrameLayout container;
@@ -35,30 +41,63 @@ public class FullScreenReactionDialog extends Dialog {
             }
         }
     };
+    private int startAnimX;
+    private int startAnimY;
+    private RecyclerListView listView;
+    private int msgId;
+    private boolean isUserDialog;
 
-    public FullScreenReactionDialog(@NonNull Context context, TLRPC.TL_availableReaction reaction) {
+    public FullScreenReactionDialog(@NonNull Context context, TLRPC.TL_availableReaction reaction, int startAnimX, int startAnimY, RecyclerListView listView, int msgId, boolean isUserDialog) {
         super(context);
+        this.startAnimX = startAnimX;
+        this.startAnimY = startAnimY;
+        this.listView = listView;
+        this.msgId = msgId;
+        this.isUserDialog = isUserDialog;
         init(context, reaction);
     }
 
-    private void init(Context context, TLRPC.TL_availableReaction reaction) {
+    private void init(final Context context, final TLRPC.TL_availableReaction reaction) {
         handler = new Handler(Looper.getMainLooper());
         container = new FrameLayout(context);
         stickerView = new FullScreenReactionStickerCell(context);
         effectView = new FullScreenReactionStickerCell(context);
-        container.addView(stickerView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.CENTER));
+        container.addView(stickerView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         container.addView(effectView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.CENTER));
         stickerView.setSticker(reaction.activate_animation, reaction, false, "reaction_" + reaction.reaction + "_" + "sticker", () -> {
             if (isShowing()) {
                 FullScreenReactionDialog.this.dismiss();
             }
+        }, isUserDialog);
+        stickerView.setDelegate(() -> {
+            if (listView != null) {
+                for (int i = 0; i < listView.getChildCount(); i++) {
+                    View view = listView.getChildAt(i);
+                    if (view instanceof ChatMessageCell) {
+                        ChatMessageCell cell = (ChatMessageCell) view;
+                        if (cell.getMessageObject() != null && cell.getMessageObject().getId() == msgId) {
+                            List<EmotionInfo> emotionInfoList = cell.getEmotionsInChatMessage();
+                            for (int a = 0; a < emotionInfoList.size(); a++) {
+                                EmotionInfo emotionInfo = emotionInfoList.get(a);
+                                if (emotionInfo.reaction != null && emotionInfo.reaction.equals(reaction.reaction)) {
+                                    int x = (int) (emotionInfo.emotionRegion.left);
+                                    int y = (int) (emotionInfo.emotionRegion.bottom + cell.getTop() + cell.getBackgroundDrawableTop() + AndroidUtilities.statusBarHeight + AndroidUtilities.dp(7));
+                                    return new int[]{x, y};
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return new int[]{0, 0};
         });
         container.setOnClickListener(v -> {
             if (isShowing()) {
                 FullScreenReactionDialog.this.dismiss();
             }
         });
-        effectView.setSticker(reaction.effect_animation, reaction, true, "reaction_" + reaction.reaction + "_" + "effect", null);
+        effectView.setSticker(reaction.effect_animation, reaction, true, "reaction_" + reaction.reaction + "_" + "effect", null, isUserDialog);
+        stickerView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
     }
 
     @Override
@@ -85,7 +124,7 @@ public class FullScreenReactionDialog extends Dialog {
     @Override
     public void show() {
         super.show();
-        stickerView.startLaunchAnimation(true);
+        stickerView.startLaunchAnimation(startAnimX, startAnimY);
         handler.postDelayed(checkAnimationReadyRunnable, 1);
     }
 

@@ -40,7 +40,7 @@ import java.util.List;
 public class ChooseReactionLayout extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
 
     public interface Delegate {
-        void onItemClick(TLRPC.TL_availableReaction reaction);
+        void onItemClick(TLRPC.TL_availableReaction reaction, int x, int y, int msgId);
     }
 
     private RecyclerListView listView;
@@ -105,10 +105,15 @@ public class ChooseReactionLayout extends FrameLayout implements NotificationCen
             if (delegate != null) {
                 TLRPC.TL_availableReaction reaction = listViewAdapter.getItem(position);
                 if (reaction != null && ((ChooseReactionStickerCell) view).isAnimationReady()) {
-                    delegate.onItemClick(reaction);
+                    int[] location = new int[2];
+                    view.getLocationOnScreen(location);
+                    int x = location[0];
+                    int y = location[1] - AndroidUtilities.statusBarHeight;
+                    delegate.onItemClick(reaction, x, y, currentMessageObject.getId());
                 }
             }
         });
+        listView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         setLayoutTransition(new LayoutTransition());
     }
 

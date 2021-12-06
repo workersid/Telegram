@@ -148,6 +148,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 
 public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate, ImageReceiver.ImageReceiverDelegate, DownloadController.FileDownloadProgressListener, TextSelectionHelper.SelectableView {
@@ -1647,6 +1648,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
 
         return false;
+    }
+
+    public List<EmotionInfo> getEmotionsInChatMessage() {
+        return emotionsInChatMessage.getEmotionInfoList();
     }
 
     private boolean checkCommentButtonMotionEvent(MotionEvent event) {

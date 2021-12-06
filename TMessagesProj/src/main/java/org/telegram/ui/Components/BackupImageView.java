@@ -178,12 +178,16 @@ public class BackupImageView extends View {
         imageReceiver.onAttachedToWindow();
     }
 
+    public boolean ignoreSetCoords = false;
+
     @Override
     protected void onDraw(Canvas canvas) {
-        if (width != -1 && height != -1) {
-            imageReceiver.setImageCoords((getWidth() - width) / 2, (getHeight() - height) / 2, width, height);
-        } else {
-            imageReceiver.setImageCoords(0, 0, getWidth(), getHeight());
+        if (!ignoreSetCoords) {
+            if (width != -1 && height != -1) {
+                imageReceiver.setImageCoords((getWidth() - width) / 2, (getHeight() - height) / 2, width, height);
+            } else {
+                imageReceiver.setImageCoords(0, 0, getWidth(), getHeight());
+            }
         }
         imageReceiver.draw(canvas);
     }

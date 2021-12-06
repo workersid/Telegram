@@ -164,7 +164,8 @@ public class UserReactionsList extends FrameLayout {
 
             @Override
             public int getItemCount() {
-                return totalReactions + Math.max((totalSeen - totalReactions), 0);
+                return totalReactions + totalSeen;
+                //return totalReactions + Math.max((totalSeen - totalReactions), 0);
             }
         });
         usersListView.setOnItemClickListener((view, position) -> {

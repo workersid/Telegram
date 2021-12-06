@@ -6069,9 +6069,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             int fixGroupWidth = 0;
             if (groupedMessages != null) {
                 //getParentWidth()
-                fixGroupWidth = AndroidUtilities.displaySize.x - AndroidUtilities.dp(80);
+                fixGroupWidth = AndroidUtilities.displaySize.x - AndroidUtilities.dp(64);
                 if (isAvatarVisible) {
-                    fixGroupWidth -= AndroidUtilities.dp(80);
+                    fixGroupWidth -= AndroidUtilities.dp(64);
                 }
             }
 

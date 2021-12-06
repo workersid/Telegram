@@ -356,6 +356,10 @@ public class EmotionsInChatMessage {
                         }
                     }
                     offsetX += avatarOffsetTotal;
+                } else {
+                    if (emotionInfo.lastThreeUsers.size() > 0) {
+                        lastUserAvatarPos += emotionInfo.lastThreeUsers.size();
+                    }
                 }
 
                 offsetX += oneItemMarginHorizontal + AndroidUtilities.dp(2);

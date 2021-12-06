@@ -17,7 +17,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
-import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.MediaDataController;
@@ -193,12 +192,10 @@ public class UserReactionsList extends FrameLayout {
     }
 
     private boolean hasEmptyElements() {
-        int firstVisible = usersLayoutManager.findFirstVisibleItemPosition();
-        int lastVisible = usersLayoutManager.findLastVisibleItemPosition();
-        for (int i = firstVisible; i <= lastVisible; i++) {
-            if (allUsers.size() > i) {
-                UserInfoHolder holder = allUsers.get(i);
-                if (holder.user == null) {
+        if (usersListView != null) {
+            for (int i = 0; i < usersListView.getChildCount(); i++) {
+                View view = usersListView.getChildAt(i);
+                if (view instanceof LoadingHolder) {
                     return true;
                 }
             }
@@ -275,7 +272,7 @@ public class UserReactionsList extends FrameLayout {
                     } else {
                         loadNextReactionsId = END_FLAG;
                         totalReactions = this.allUsers.size();
-                        finishLoading(true);
+                        finishLoading(false);
                     }
                 }));
                 return;
